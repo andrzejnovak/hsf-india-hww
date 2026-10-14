@@ -1,6 +1,10 @@
 # The sealed run of the hackathon, on a throwaway machine: every comment on the submissions issue (issue 1)
-# re-scores every submission on a fresh sealed suite and commits the leaderboard table into README.md.
-# Run it by hand ("Run workflow") with plots: true after the deadline for the final table with recovery plots.
+# scores every submission on the sealed suite and commits the leaderboard table into README.md. With the
+# SEALED_SEED repository secret (Settings > Secrets and variables > Actions; any long random string, e.g.
+# python3 -c 'import secrets; print(secrets.token_hex(16))') the suite is the same every run, so results are
+# comparable and a team whose commit was scored before is read from results/cache instead of re-run; without it
+# the suite is fresh each run and nothing is cached. Run it by hand ("Run workflow") with plots: true after the
+# deadline for the final table with recovery plots (that run re-scores everyone).
 name: sealed run
 
 on:
@@ -16,7 +20,7 @@ on:
         type: boolean
         default: false
       seed:
-        description: "a fixed master seed (empty: made up for this run and never printed)"
+        description: "a master seed by hand (empty: the SEALED_SEED secret, or made up for this run; never printed)"
         default: ""
 
 concurrency:
@@ -30,7 +34,7 @@ jobs:
   score:
     if: github.event_name == 'workflow_dispatch' || github.event.issue.number == 1
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,8 +47,9 @@ jobs:
       - name: score every submission on a sealed suite
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # read by sealed_run.py for the issue API call and dropped before any submission runs
+          SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the fixed suite's secret; dropped from the environment the same way
         run: |
-          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md \
+          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 2400 \
             --n "${{ github.event.inputs.n || '21' }}" \
             ${{ github.event.inputs.plots == 'true' && '--plots' || '' }} \
             ${{ github.event.inputs.seed != '' && format('--seed {0}', github.event.inputs.seed) || '' }}

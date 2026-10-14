@@ -73,9 +73,10 @@ def load_truth(ds: Path, truths: Path = None):
     return json.loads(f.read_text()) if f.is_file() else None
 
 
-def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log=print, as_user: str = None):
+def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log=print, as_user: str = None, budget: float = None):
     """Run sub/run.sh on every seed of the suite and compare with the truths; prints the per-seed table through
-    log and returns {"rows": [...], "agg": aggregate(rows)}."""
+    log and returns {"rows": [...], "agg": aggregate(rows)}. With a budget (seconds for the whole suite), the
+    seeds left when it runs out count as not run."""
     sub, suite = Path(sub).resolve(), Path(suite).resolve()
     if not (sub / "run.sh").is_file():
         raise SystemExit(f"no run.sh in {sub}")
@@ -85,8 +86,13 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
     rows = []
     log(f"{'seed':9s} {'status':8s} {'wall':>6s}  " + "  ".join(f"{p + ' planted':>10s} {'reported':>16s} {'pull':>6s}" for p in ALL_POIS)
         + f"  {'Z_exp':>5s} {'Z_obs':>5s} disc")
+    t0 = time.time()
     for ds in seeds:
         truth = load_truth(ds, truths)
+        if budget is not None and time.time() - t0 > budget:
+            rows.append({"seed": ds.name, "truth": truth, "ok": False, "status": "budget", "wall": 0.0})
+            log(f"{ds.name:9s} {'budget':8s}   0.0s  the submission's time for the whole suite ({budget:.0f} s) ran out")
+            continue
         status, res, wall, errlog = run_seed(sub, ds, timeout, as_user)
         row = {"seed": ds.name, "truth": truth, "ok": False, "status": str(status), "wall": wall}
         if res is not None:

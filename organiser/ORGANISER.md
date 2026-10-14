@@ -61,6 +61,28 @@ fits sit at 0.8–1.0. The pseudo-data are a weighted draw with replacement from
 few heavy background events dominate fluctuates less than Poisson; the fit's likelihood does not know that.
 The window still fails the stub (width 4) and a padded "always ± 1" (width 0.1). `examples/*/hww.py` are copies of the root `hww.py`: keep them in step.
 
+## The sealed run on GitHub Actions
+
+`.github/workflows/sealed_run.yml` runs `organiser/sealed_run.py` on every comment of the submissions issue and
+on demand. What makes it reproducible and cheap:
+
+- **`SEALED_SEED`**, a repository secret (Settings → Secrets and variables → Actions → New repository secret;
+  any long random string, e.g. `python3 -c 'import secrets; print(secrets.token_hex(16))'`). With it every
+  run builds the same sealed suite, so the table is comparable from run to run, and a team whose commit was
+  scored before is read from `results/cache/<team>.json` (aggregates and verdicts only, never the per-dataset
+  rows) instead of being run again: a new comment costs the time of the teams that changed. Without the
+  secret the suite is fresh every run and nothing is cached (the kit works, the numbers just wander by the
+  statistics of 20 datasets, about ±0.2 on a pull width). The seed and the per-dataset truths never reach the
+  public Actions log: the per-seed tables stay on the runner, in `/tmp/sealed/results/<team>/score.txt`.
+  Rotate the secret to change the suite (and empty `results/cache/`). The run with `plots: true` after the
+  deadline re-scores everyone, cache or not.
+- **`--jobs 2`**: two teams at a time on the 4-core runner (each submission is capped at 6 GB).
+- **`--team-budget 2400`**: a submission gets 40 minutes for the whole suite; the datasets left when it runs
+  out count as not run, which drops recovery below 90 % and the team to level 0, and the README says so. The
+  contract's 600 s per dataset still holds within the budget.
+- `workflow_dispatch` inputs: `n` (datasets; 21 by default, 31 or 41 for a steadier final table), `plots`,
+  `seed` (a seed by hand: no cache, since a short seed is not secret enough).
+
 ## Before the start
 
 ```bash

@@ -39,9 +39,16 @@ level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
 Order: the mu level, then the mass level, then the distance |slope - 1| + |ln width| on mu, smallest first.
 Each sbh check run takes two runs of the submission and the scoring --n runs: budget about 2 minutes per team
-with a pipeline like examples/naive_fit.
+with a pipeline like examples/template_fit, 15 with examples/tutorial_nn.
+
+The suite: with the SEALED_SEED secret (any long random string) every run builds the same sealed suite, so
+runs are comparable and a team whose commit was scored before is read from the cache (results/cache/<team>.json,
+aggregates only) instead of re-run; the final run with --plots re-runs everyone. Without the secret the seed is
+made up for the run and nothing is cached. The seed and the per-dataset truths never reach the log: the
+per-seed tables stay in <out>/results/<team>/score.txt.
 """
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -63,6 +70,82 @@ import make_suite as T  # noqa: E402
 PUBLIC = KIT / "datasets" / "public" / "seed_000"
 ISSUE_REPO = "andrzejnovak/hsf-india-hww"
 LINE = re.compile(r"^\s*`?([A-Za-z0-9_-]+)\s*:\s*(\S+?)\s*@\s*([0-9a-fA-F]{7,40})`?\s*$", re.M)
+
+
+def secret_seed():
+    """The master seed from the SEALED_SEED secret (any string; a long random one), and a cache key derived
+    from it. None, None without the secret: a seed made up for this run, and no cache."""
+    s = os.environ.pop("SEALED_SEED", None)
+    if not s:
+        return None, None
+    seed = int.from_bytes(hashlib.sha256(("seed:" + s).encode()).digest()[:8], "big") & (2 ** 63 - 1)
+    return seed, hashlib.sha256(("cache:" + s).encode()).hexdigest()[:12]
+
+
+def cached(cache: Path, team: str, entry, n: int, key: str):
+    """The last result of this team's commit on this suite, if the cache has it."""
+    if cache is None or key is None:
+        return None
+    f = cache / f"{team}.json"
+    if not f.is_file():
+        return None
+    try:
+        c = json.loads(f.read_text())
+    except json.JSONDecodeError:
+        return None
+    if c.get("commit") == entry["commit"] and c.get("n") == n and c.get("key") == key:
+        return c
+    return None
+
+
+def remember(cache: Path, e, n: int, key: str):
+    """Cache what the leaderboard needs: aggregates and verdicts, never rows (they carry the planted truths)."""
+    if cache is None or key is None:
+        return
+    cache.mkdir(parents=True, exist_ok=True)
+    keep = {k: v for k, v in e.items() if k not in ("rows",)}
+    keep.update(n=n, key=key)
+    (cache / f"{e['team']}.json").write_text(json.dumps(keep, indent=1, default=str))
+
+
+def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key):
+    """Fetch, self-check and score one team; returns (entry, log lines). Nothing a submission printed and no
+    per-dataset truth reaches the returned log: the per-seed table stays in results/<team>/score.txt."""
+    lines = []; log = lines.append
+    log(f"=== {team}")
+    res = out / "results" / team; res.mkdir(parents=True, exist_ok=True)
+    submitted = f"{entry['commit'][:7]} ({entry['submitted']})"
+    c = None if a.plots else cached(cache, team, entry, a.n, key)
+    if c is not None:
+        c["rows"] = []
+        log(f"cached: this commit was scored on this suite at {c.get('scored_at')}: level {c['level']}")
+        return c, lines
+    sub = fetch(entry, out / "submissions" / team, log)
+    if sub is None:
+        (res / "check.txt").write_text("not fetched\n")
+        log("level 0 (not fetched)")
+        return {"team": team, "check_ok": False, "submitted": submitted, "level": 0, "distance": float("inf"),
+                "agg": S.aggregate([]), "rows": [], "url": entry["url"], "commit": entry["commit"]}, lines
+    if a.no_check:
+        check_ok, note = False, "skipped (--no-check)"
+    else:
+        check_ok, text = self_check(sub, res / "check.txt", 2 * a.timeout + 60)
+        note = "PASS" if check_ok else "FAIL: " + (text.strip().splitlines() or ["(no output)"])[-1][:120]
+    log(f"self-check: {note}")
+    table = []
+    r = S.score(sub, suite, a.timeout, truths, log=table.append, as_user=a.as_user, budget=a.team_budget)
+    (res / "score.txt").write_text("\n".join(table) + "\n")
+    (res / "score.json").write_text(json.dumps(r, indent=1, default=str))
+    S.report(r["agg"], log)
+    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run"):
+        log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
+    e = {"team": team, "check_ok": check_ok, "submitted": submitted, "agg": r["agg"],
+         "level": level(r["agg"], check_ok), "distance": distance(r["agg"]), "rows": r["rows"],
+         "url": entry["url"], "commit": entry["commit"],
+         "scored_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    remember(cache, e, a.n, key)
+    log(f"level {e['level']}  (distance {fmt(e['distance'])})")
+    return e, lines
 
 
 def build_suite(out: Path, seed, n: int, log):
@@ -189,7 +272,7 @@ def fmt(x, f="{:.2f}"):
 MARK = ("<!-- leaderboard -->", "<!-- /leaderboard -->")
 
 
-def publish(entries, readme: Path, results: Path, plots: bool, log):
+def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None):
     """The table (and, with plots, each team's recovery plot) into the README between the markers."""
     text = readme.read_text()
     if MARK[0] not in text or MARK[1] not in text:
@@ -198,7 +281,8 @@ def publish(entries, readme: Path, results: Path, plots: bool, log):
     when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     body = [f"_Sealed run of {when}: {entries[0]['agg']['n']} datasets nobody has seen, every submission on the "
             f"[issue](https://github.com/{ISSUE_REPO}/issues/1) at its last comment. "
-            + ("Recovery plots: reported against planted, per team." if plots else "Recovery plots follow after the deadline.") + "_", "",
+            + ("Recovery plots: reported against planted, per team." if plots else "Recovery plots follow after the deadline.")
+            + (f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else "") + "_", "",
             rows[0]]
     if plots:
         pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
@@ -252,6 +336,9 @@ def main():
     ap.add_argument("--plots", action="store_true", help="with --publish: the recovery plots too (after the deadline only)")
     ap.add_argument("--no-check", action="store_true", help="skip the self-check (its verdict then reads FAIL)")
     ap.add_argument("--timeout", type=float, default=600, help="seconds per dataset, the contract's 600")
+    ap.add_argument("--team-budget", type=float, help="seconds a submission gets for the whole suite (CI: 2400); the rest counts as not run")
+    ap.add_argument("--jobs", type=int, default=1, help="teams scored at the same time (CI: 2)")
+    ap.add_argument("--cache", metavar="DIR", help="reuse a team's result when its commit was scored on this suite before (default with --publish: <README dir>/results/cache; needs SEALED_SEED)")
     a = ap.parse_args()
     out = Path(a.out).expanduser().resolve()
     log = print
@@ -264,41 +351,26 @@ def main():
     if not teams:
         raise SystemExit("no submissions: no `<team>: <url> @ <commit>` line " + (f"in {a.teams}" if a.teams else f"on issue {a.issue}"))
     log("submissions: " + ", ".join(f"{t} ({e['url']} @ {e['commit'][:7]})" for t, e in teams.items()))
-    suite, truths = build_suite(out, a.seed, a.n, log)
+    seed, key = secret_seed()
+    if a.seed is not None:
+        seed, key = a.seed, None          # a seed given by hand: no cache, it is not secret enough
+    log("suite: " + ("the fixed sealed suite (SEALED_SEED)" if key else "made up for this run" if seed is None else "the seed given by hand"))
+    suite, truths = build_suite(out, seed, a.n, log)
     results = out / "results"; results.mkdir(exist_ok=True)
-    entries = []
-    for team, entry in teams.items():
-        log(f"\n=== {team}")
-        res = results / team; res.mkdir(exist_ok=True)
-        submitted = f"{entry['commit'][:7]} ({entry['submitted']})"
-        sub = fetch(entry, out / "submissions" / team, log)
-        if sub is None:
-            (res / "check.txt").write_text("not fetched\n")
-            entries.append({"team": team, "check_ok": False, "submitted": submitted, "level": 0, "distance": float("inf"),
-                            "agg": S.aggregate([]), "rows": [], "url": entry["url"], "commit": entry["commit"]})
-            log("level 0 (not fetched)")
-            continue
-        if a.no_check:
-            check_ok, note = False, "skipped (--no-check)"
-        else:
-            check_ok, text = self_check(sub, res / "check.txt", 2 * a.timeout + 60)
-            note = "PASS" if check_ok else "FAIL: " + (text.strip().splitlines() or ["(no output)"])[-1][:120]
-        log(f"self-check: {note}")
-        lines = []
-        r = S.score(sub, suite, a.timeout, truths, log=lambda s: (lines.append(s), print(s)), as_user=a.as_user)
-        (res / "score.txt").write_text("\n".join(lines) + "\n")
-        (res / "score.json").write_text(json.dumps(r, indent=1, default=str))
-        if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run"):
-            log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
-        e = {"team": team, "check_ok": check_ok, "submitted": submitted, "agg": r["agg"],
-             "level": level(r["agg"], check_ok), "distance": distance(r["agg"]), "rows": r["rows"],
-             "url": entry["url"], "commit": entry["commit"],
-             "scored_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
-        entries.append(e)
-        log(f"level {e['level']}  (distance {fmt(e['distance'])})")
+    cache = Path(a.cache).resolve() if a.cache else (Path(a.publish).resolve().parent / "results" / "cache" if a.publish else None)
+    if cache is not None and key is None:
+        log("no SEALED_SEED: nothing is cached, every team is scored")
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=max(1, a.jobs)) as pool:
+        futures = {team: pool.submit(score_team, team, entry, a, out, suite, truths, cache, key) for team, entry in teams.items()}
+        entries = []
+        for team, fut in futures.items():
+            e, lines = fut.result()
+            log("\n" + "\n".join(lines))
+            entries.append(e)
     leaderboard(entries, results / "leaderboard.md", results / "leaderboard.json", log)
     if a.publish:
-        publish(entries, Path(a.publish).resolve(), results, a.plots, log)
+        publish(entries, Path(a.publish).resolve(), results, a.plots, log, budget=a.team_budget)
 
 
 if __name__ == "__main__":
