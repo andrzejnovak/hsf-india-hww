@@ -104,11 +104,17 @@ def parse_lines(texts):
 
 
 def teams_from_issue(number: int):
+    """The comments of the submissions issue through the GitHub API. GITHUB_TOKEN, when set (the Actions job's
+    own token), authenticates the call: anonymous calls share a small rate limit with every other runner. The
+    variable is removed from the environment right away, before any submission runs."""
+    token = os.environ.pop("GITHUB_TOKEN", None)
     url = f"https://api.github.com/repos/{ISSUE_REPO}/issues/{number}/comments?per_page=100"
     texts, page = [], 1
     while True:
-        req = urllib.request.Request(url + f"&page={page}", headers={"Accept": "application/vnd.github+json",
-                                                                     "User-Agent": "hsf-india-hackathon"})
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "hsf-india-hackathon"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = urllib.request.Request(url + f"&page={page}", headers=headers)
         with urllib.request.urlopen(req, timeout=30) as r:
             comments = json.loads(r.read().decode())
         texts += [(c["body"], f"{c.get('created_at', '')} by {c.get('user', {}).get('login', '?')}") for c in comments]

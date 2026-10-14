@@ -41,6 +41,8 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --quiet numpy scipy matplotlib
       - name: score every submission on a sealed suite
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # read by sealed_run.py for the issue API call and dropped before any submission runs
         run: |
           python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md \
             --n "${{ github.event.inputs.n || '21' }}" \
