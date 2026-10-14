@@ -44,10 +44,10 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-14 09:44 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
+_Sealed run of 2026-10-14 10:30 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
 
-| # | team        | level | mass (optional)                  | slope μ | pull width μ | false disc. | self-check | submitted                                      |
-|---|-------------|-------|----------------------------------|---------|--------------|-------------|------------|------------------------------------------------|
-| 1 | baseline-nn | 2     | level 2 (slope 1.01, width 1.11) | 1.02    | 1.00         | 0/5         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
-| 2 | baseline-mt | 2     | level 2 (slope 0.95, width 0.84) | 0.95    | 1.10         | 0/5         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
+| # | team        | level μ | level mass | slope μ | pull width μ | slope mass | pull width mass | false disc. | self-check | submitted                                      |
+|---|-------------|---------|------------|---------|--------------|------------|-----------------|-------------|------------|------------------------------------------------|
+| 1 | baseline-nn | 2       | 1          | 1.01    | 0.85         | 1.16       | 2.89            | 0/5         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
+| 2 | baseline-mt | 2       | 1          | 1.03    | 0.57         | 1.17       | 1.95            | 0/5         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
 <!-- /leaderboard -->
