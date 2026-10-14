@@ -43,11 +43,10 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-14 09:10 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
+_Sealed run of 2026-10-14 09:18 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
 
-| # | team         | level | slope μ | pull width μ | bias μ | false disc. | power | recovery | self-check | submitted                                      |
-|---|--------------|-------|---------|--------------|--------|-------------|-------|----------|------------|------------------------------------------------|
-| 1 | baseline-mt  | 2     | 1.04    | 0.99         | +0.06  | 0/6         | 0.62  | 21/21    | PASS       | d1d249f (2026-10-14T08:25:55Z by andrzejnovak) |
-| 2 | sim-deepseek | 2     | 0.99    | 0.89         | +0.04  | 0/6         | 1.00  | 21/21    | PASS       | 0e7e3c3 (2026-10-14T09:08:40Z by andrzejnovak) |
-| 3 | baseline-nn  | 1     | 1.03    | 0.69         | +0.00  | 0/6         | 0.92  | 21/21    | PASS       | da523e4 (2026-10-14T08:26:00Z by andrzejnovak) |
+| # | team        | level | slope μ | pull width μ | bias μ | false disc. | power | recovery | self-check | submitted                                      |
+|---|-------------|-------|---------|--------------|--------|-------------|-------|----------|------------|------------------------------------------------|
+| 1 | baseline-mt | 2     | 1.15    | 1.15         | +0.05  | 0/6         | 0.87  | 21/21    | PASS       | d1d249f (2026-10-14T08:25:55Z by andrzejnovak) |
+| 2 | baseline-nn | 1     | 1.06    | 0.63         | -0.04  | 0/6         | 0.93  | 21/21    | PASS       | da523e4 (2026-10-14T08:26:00Z by andrzejnovak) |
 <!-- /leaderboard -->
