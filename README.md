@@ -43,9 +43,11 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-14 08:12 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
+_Sealed run of 2026-10-14 08:27 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
 
-| # | team     | level | slope μ | pull width μ | bias μ | false disc. | power | recovery | self-check | submitted                                      |
-|---|----------|-------|---------|--------------|--------|-------------|-------|----------|------------|------------------------------------------------|
-| 1 | demo-ref | 2     | 1.07    | 1.02         | -0.01  | 0/4         | 0.87  | 21/21    | PASS       | 8429ffb (2026-10-14T08:11:36Z by andrzejnovak) |
+| # | team        | level | slope μ | pull width μ | bias μ | false disc. | power | recovery | self-check | submitted                                      |
+|---|-------------|-------|---------|--------------|--------|-------------|-------|----------|------------|------------------------------------------------|
+| 1 | baseline-mt | 2     | 0.99    | 0.94         | +0.43  | 0/8         | 0.90  | 21/21    | PASS       | d1d249f (2026-10-14T08:25:55Z by andrzejnovak) |
+| 2 | demo-ref    | 2     | 0.99    | 0.94         | +0.43  | 0/8         | 0.90  | 21/21    | PASS       | 8429ffb (2026-10-14T08:11:36Z by andrzejnovak) |
+| 3 | baseline-nn | 0     | –       | –            | –      | –           | –     | –        | FAIL       | 5aaa40a (2026-10-14T08:26:00Z by andrzejnovak) |
 <!-- /leaderboard -->
