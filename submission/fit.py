@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""The classifier plugged into the measurement: a template fit of the network-score distribution.
+"""The tutorial network plugged into the measurement: a template fit of its score distribution.
 
     python3 fit.py <dataset_dir> <output_dir>      (run.sh calls this; model.json from train.py sits beside it)
 
 The network (model.json) is evaluated with numpy on the data and on the pool; the score, "how Higgs-like", is
 the fitted observable: 20 bins from 0 to 1, the signal and background shapes from the pool, two parameters, mu
-and the background normalisation. Everything else is as in examples/template_fit, which fits m_T instead.
+and the background normalisation. Identical to examples/nn_fit/fit.py: only train.py (the features, the network) differs.
 """
 import json
 import sys
