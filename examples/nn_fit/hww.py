@@ -81,6 +81,8 @@ def templates(pool, masses=MASS_GRID):
 def interpolate(S, m):
     """The signal template at any mass inside the grid, linearly between its two neighbours."""
     grid = np.array(sorted(S))
+    if len(grid) == 1:
+        return S[grid[0]]
     m = float(np.clip(m, grid[0], grid[-1]))
     j = int(np.clip(np.searchsorted(grid, m, side="right") - 1, 0, len(grid) - 2))
     lo, hi = grid[j], grid[j + 1]

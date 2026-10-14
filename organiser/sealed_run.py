@@ -32,10 +32,10 @@ harness's `sbh eval` on the clones is the sandboxed alternative (organiser/ORGAN
 
 Levels, as the pitch defines them (change `level` below if the rule changes):
   0  self-check failed, fewer than 90 % of the datasets gave a valid RESULT.json, or no slope
-  1  a measurement: the slope of reported vs planted mH is at least 0.8
-  2  level 1 with honest error bars: pull widths within [0.7, 1.4] for mH and mu, and no false discovery
+  1  a measurement: the slope of reported vs planted mu is at least 0.8
+  2  level 1 with honest error bars: a pull width within [0.7, 1.4], and no false discovery
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
-Order: level, then the distance |slope_mH - 1| + |slope_mu - 1| + |ln w_mH| + |ln w_mu|, smallest first.
+Order: level, then the distance |slope - 1| + |ln width|, smallest first.
 Each sbh check run takes two runs of the submission and the scoring --n runs: budget about 2 minutes per team
 with a pipeline like examples/naive_fit.
 """
@@ -158,22 +158,18 @@ def self_check(sub: Path, log_path: Path, timeout: float):
 
 
 def level(agg, check_ok):
-    mh, mu = agg["pois"].get("mH"), agg["pois"].get("mu")
-    if not check_ok or agg["recovery"] < 0.9 or mh is None or mu is None or not math.isfinite(mh["slope"]):
+    mu = agg["pois"].get("mu")
+    if not check_ok or agg["recovery"] < 0.9 or mu is None or not math.isfinite(mu["slope"]) or mu["slope"] < 0.8:
         return 0
-    if mh["slope"] < 0.8:
-        return 0
-    honest = all(S.WIDTH_OK[0] <= a["width"] <= S.WIDTH_OK[1] for a in (mh, mu)) and not agg["false_discoveries"]
+    honest = S.WIDTH_OK[0] <= mu["width"] <= S.WIDTH_OK[1] and not agg["false_discoveries"]
     return 2 if honest else 1
 
 
 def distance(agg):
-    mh, mu = agg["pois"].get("mH"), agg["pois"].get("mu")
-    if mh is None or mu is None:
+    mu = agg["pois"].get("mu")
+    if mu is None or not math.isfinite(mu["slope"]):
         return float("inf")
-    d = abs(mh["slope"] - 1) + abs(mu["slope"] - 1)
-    for a in (mh, mu):
-        d += abs(math.log(a["width"])) if a["width"] > 0 else 9.0
+    d = abs(mu["slope"] - 1) + (abs(math.log(mu["width"])) if mu["width"] > 0 else 9.0)
     return d if math.isfinite(d) else float("inf")
 
 
@@ -209,13 +205,13 @@ def publish(entries, readme: Path, results: Path, plots: bool, log):
 
 def table_rows(entries):
     entries.sort(key=lambda e: (-e["level"], e["distance"], e["team"]))
-    head = ["#", "team", "level", "slope mH", "slope μ", "pull width mH", "pull width μ", "false disc.", "power",
+    head = ["#", "team", "level", "slope μ", "pull width μ", "bias μ", "false disc.", "power",
             "recovery", "self-check", "submitted"]
     rows = []
     for i, e in enumerate(entries, 1):
-        a = e["agg"]; mh, mu = a["pois"].get("mH"), a["pois"].get("mu")
+        a = e["agg"]; mu = a["pois"].get("mu")
         rows.append([str(i), e["team"], str(e["level"]),
-                     fmt(mh and mh["slope"]), fmt(mu and mu["slope"]), fmt(mh and mh["width"]), fmt(mu and mu["width"]),
+                     fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fmt(mu and mu["bias"], "{:+.2f}"),
                      f"{a['false_discoveries']}/{a['n_null']}" if a["n_null"] else "–",
                      fmt(a["power"]), f"{a['n_ok']}/{a['n']}" if a["n"] else "–", "PASS" if e["check_ok"] else "FAIL",
                      e.get("submitted") or "–"])
@@ -228,7 +224,7 @@ def table_rows(entries):
 def leaderboard(entries, path_md: Path, path_json: Path, log):
     text = table_rows(entries)
     path_md.write_text(f"# Leaderboard\n\n{text}\n\nlevel 0: no measurement (self-check, recovery or slope); 1: follows the truth "
-                       f"(slope of mH ≥ 0.8); 2: and honest error bars (pull widths in [{S.WIDTH_OK[0]}, {S.WIDTH_OK[1]}], no false discovery). "
+                       f"(slope of μ ≥ 0.8); 2: and honest error bars (pull width in [{S.WIDTH_OK[0]}, {S.WIDTH_OK[1]}], no false discovery). "
                        f"Within a level, closest to slope 1 and width 1 first.\n")
     path_json.write_text(json.dumps([{k: v for k, v in e.items() if k != "rows"} for e in entries], indent=1, default=str))
     log("\n" + text)

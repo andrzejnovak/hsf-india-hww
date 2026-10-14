@@ -9,7 +9,7 @@ from sbh.task import Task
 class _ParticipantTask(Task):
     name = 'hww'
     kind = 'pois'
-    pois = ['mH', 'mu']
+    pois = ['mu']
     result_type = 'search'
     requires_model = False
     event_list_from = None

@@ -4,8 +4,7 @@ set -euo pipefail
 mkdir -p "$2"
 python3 - "$2" <<'PY'
 import json, sys
-json.dump({"pois": [{"name": "mH", "value": 125.0, "stat": 0.4, "syst": 0.0, "total": 0.4},
-                    {"name": "mu", "value": 1.0, "stat": 0.25, "syst": 0.0, "total": 0.25}],
+json.dump({"pois": [{"name": "mu", "value": 1.0, "stat": 0.25, "syst": 0.0, "total": 0.25}],
            "significance_obs": 4.0, "discovery": False,
            "note": "constant output: this pipeline never opens the dataset"},
           open(sys.argv[1] + "/RESULT.json", "w"), indent=1)

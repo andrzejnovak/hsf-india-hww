@@ -22,6 +22,8 @@ from pathlib import Path
 import numpy as np
 
 Z_APPLICABLE = 5.0
+POIS = ["mu"]                      # what truth.json and RESULT.json are compared on
+UNITS = {"mH": " [GeV]", "mu": ""}
 
 
 def run_seed(sub: Path, ds: Path, timeout: float, as_user: str = None):
@@ -77,30 +79,29 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
     if not seeds:
         raise SystemExit(f"no truths for seed_* under {suite}: make a suite with make_suite.py")
     rows = []
-    log(f"{'seed':9s} {'status':8s} {'wall':>6s}  {'mH planted':>10s} {'reported':>16s} {'pull':>6s}  "
-        f"{'mu planted':>10s} {'reported':>14s} {'pull':>6s}  {'Z_exp':>5s} {'Z_obs':>5s} disc")
+    log(f"{'seed':9s} {'status':8s} {'wall':>6s}  " + "  ".join(f"{p + ' planted':>10s} {'reported':>16s} {'pull':>6s}" for p in POIS)
+        + f"  {'Z_exp':>5s} {'Z_obs':>5s} disc")
     for ds in seeds:
         truth = load_truth(ds, truths)
         status, res, wall, errlog = run_seed(sub, ds, timeout, as_user)
         row = {"seed": ds.name, "truth": truth, "ok": False, "status": str(status), "wall": wall}
         if res is not None:
             try:
-                (mh, mh_e), (mu, mu_e) = poi(res, "mH"), poi(res, "mu")
-                row.update(ok=True, mH=mh, mH_e=mh_e, mu=mu, mu_e=mu_e,
+                vals = {p: poi(res, p) for p in POIS}
+                row.update(ok=True, **{p: v for p, (v, e) in vals.items()}, **{p + "_e": e for p, (v, e) in vals.items()},
                            z=float(res.get("significance_obs", 0.0)), disc=bool(res.get("discovery", False)))
             except (KeyError, TypeError, ValueError) as e:
                 status = f"bad:{type(e).__name__}"
                 row["status"] = status
         zexp = truth.get("expected_significance", 0.0)
         if row["ok"]:
-            pm, pu = (row["mH"] - truth["mH"]) / row["mH_e"], (row["mu"] - truth["mu"]) / row["mu_e"]
-            row.update(pull_mH=pm, pull_mu=pu)
-            log(f"{ds.name:9s} {'ok':8s} {wall:5.1f}s  {truth['mH']:10.2f} {row['mH']:8.2f} ± {row['mH_e']:5.2f} "
-                f"{pm:6.2f}  {truth['mu']:10.2f} {row['mu']:7.2f} ± {row['mu_e']:4.2f} {pu:6.2f}  "
-                f"{zexp:5.1f} {row['z']:5.1f} {'yes' if row['disc'] else 'no'}")
+            for p in POIS:
+                row[f"pull_{p}"] = (row[p] - truth[p]) / row[p + "_e"]
+            log(f"{ds.name:9s} {'ok':8s} {wall:5.1f}s  " + "  ".join(f"{truth[p]:10.2f} {row[p]:8.2f} ± {row[p + '_e']:5.2f} {row['pull_' + p]:6.2f}" for p in POIS)
+                + f"  {zexp:5.1f} {row['z']:5.1f} {'yes' if row['disc'] else 'no'}")
         else:
-            log(f"{ds.name:9s} {str(status):8s} {wall:5.1f}s  {truth['mH']:10.2f} {'-':>16s} {'-':>6s}  "
-                f"{truth['mu']:10.2f} {'-':>14s} {'-':>6s}  {zexp:5.1f}" + (f"\n    {errlog.strip()[-300:]}" if errlog.strip() else ""))
+            log(f"{ds.name:9s} {str(status):8s} {wall:5.1f}s  " + "  ".join(f"{truth[p]:10.2f} {'-':>16s} {'-':>6s}" for p in POIS)
+                + f"  {zexp:5.1f}" + (f"\n    {errlog.strip()[-300:]}" if errlog.strip() else ""))
         rows.append(row)
     agg = aggregate(rows)
     report(agg, log)
@@ -115,7 +116,7 @@ def aggregate(rows):
     null = [r for r in ok if r["truth"]["mu"] == 0]
     agg = {"n": len(rows), "n_ok": len(ok), "recovery": len(ok) / max(len(rows), 1),
            "n_strong": len(strong), "n_null": len(null), "pois": {}}
-    for name in ("mH", "mu"):
+    for name in POIS:
         if len(strong) < 3:
             agg["pois"][name] = None
             continue
@@ -135,9 +136,9 @@ def aggregate(rows):
 
 def report(agg, log=print):
     log(f"\nrecovery: {agg['n_ok']}/{agg['n']} seeds completed with a valid RESULT.json")
-    log(f"scored for mH and mu: {agg['n_strong']} seeds with expected significance >= {Z_APPLICABLE:g}; "
+    log(f"scored for {', '.join(POIS)}: {agg['n_strong']} seeds with expected significance >= {Z_APPLICABLE:g}; "
         f"{agg['n_null']} null seeds")
-    for name in ("mH", "mu"):
+    for name in POIS:
         a = agg["pois"][name]
         if a is None:
             log(f"  {name}: fewer than 3 scorable seeds, no slope")
@@ -151,7 +152,7 @@ def report(agg, log=print):
 
 
 def plot(rows, path, title=None):
-    """The recovery plot, reported vs planted for mH and mu; returns False without matplotlib."""
+    """The recovery plot, reported vs planted per POI; returns False without matplotlib."""
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -159,8 +160,9 @@ def plot(rows, path, title=None):
     except ImportError:
         return False
     ok = [r for r in rows if r["ok"]]
-    fig, axes = plt.subplots(1, 2, figsize=(9, 4.2))
-    for ax, name, unit in zip(axes, ("mH", "mu"), (" [GeV]", "")):
+    fig, axes = plt.subplots(1, len(POIS), figsize=(4.8 * len(POIS), 4.2), squeeze=False)
+    for ax, name in zip(axes[0], POIS):
+        unit = UNITS.get(name, "")
         for r in ok:
             s = r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
             ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=4, capsize=2,
@@ -170,7 +172,7 @@ def plot(rows, path, title=None):
         ax.set_xlim(lo, hi)
         ax.set_xlabel(f"planted {name}{unit}"); ax.set_ylabel(f"reported {name}{unit}")
         ax.legend(loc="upper left", frameon=False)
-    axes[0].set_title("blue: scored seeds (Z_exp ≥ 5), grey: weak or null", fontsize=9)
+    axes[0][0].set_title("blue: scored seeds (Z_exp ≥ 5), grey: weak or null", fontsize=9)
     if title:
         fig.suptitle(title, fontsize=11)
     fig.tight_layout(); fig.savefig(path, dpi=130); plt.close(fig)

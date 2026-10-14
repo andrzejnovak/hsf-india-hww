@@ -1,10 +1,11 @@
 # Organiser notes
 
 What is here: the H → WW toy on the participant bundle of `jfc-mit/slopbench_harness` (`sbh/`, the self-check;
-`tasks/hww/`, the task stub), the shared physics (`hww.py`: kinematics, mass morphing, templates), the generator
-(`make_suite.py`, truth beside each dataset), the scorer (`score_suite.py`, the contract's aggregates on a
-home-made suite, no sandbox), two example pipelines (`examples/template_fit`, the reference: a kinematic 2D
-template fit; `examples/nn_fit`: a small network plugged in), `explore.py`, `make_plots.py` (the figures of
+`tasks/hww/`, the task stub), the shared physics (`hww.py`: kinematics, templates; a mass-morphing function that
+the task no longer uses), the generator (`make_suite.py`, truth beside each dataset), the scorer
+(`score_suite.py`, the contract's aggregates on a home-made suite, no sandbox), two example pipelines
+(`examples/template_fit`, the reference: a fit of the m_T distribution; `examples/nn_fit`: a fit of a small
+network's score), `explore.py`, `make_plots.py` (the figures of
 GUIDE.md and the slides), `submit.sh`, `new_team.sh`, and the sealed run (`organiser/sealed_run.py` and
 `.github/workflows/sealed_run.yml`).
 
@@ -16,12 +17,12 @@ to events with exactly two leptons and positive weight, the columns of DATASET.m
 scaled from the file's 10 fb⁻¹ to **1000 fb⁻¹**: 618 signal events at μ = 1 on 15 969 background. The lepton
 and jet energies of the original are in MeV while its momenta are in GeV; the pool keeps momenta only.
 
-A signal of mass m is the 125 GeV sample with lepton pT and missing ET scaled by m / 125 (`hww.morph`); the
-expected signal yield does not depend on m. Pseudo-data are drawn from the pool with probability proportional
-to the weight, the signal morphed to the planted mass: at 1000 fb⁻¹ about 8 % of the background draws repeat
-an event already drawn. The truths: m_H uniform in [100, 150], μ uniform in [0, 3] with a fifth at 0, the
-background normalisation uniform within ±10 %. `expected_significance` in truth.json is the Asimov
-significance of the 2D (m_T, m_ll) templates at the truth; datasets with ≥ 5 are the scored ones.
+Pseudo-data are drawn from the pool with probability proportional to the weight: at 1000 fb⁻¹ about 8 % of
+the background draws repeat an event already drawn. The truths: μ uniform in [0, 3] with a fifth at 0, the
+background normalisation uniform within ±10 %; the mass is 125 GeV everywhere (`hww.morph` can make a signal
+of another mass by scaling lepton pT and missing ET, which an earlier version of the task planted; the
+generator no longer does). `expected_significance` in truth.json is the Asimov significance of the 2D
+(m_T, m_ll) templates at the truth; datasets with ≥ 5 are the scored ones.
 
 The data events are copies of pool events (morphed for the signal); a determined cheater could match them
 back to the labels. The rule in GUIDE.md and reading the submissions is the mitigation; a held-out pool
@@ -32,15 +33,15 @@ back to the labels. The rule in GUIDE.md and reading the submissions is the miti
 ```bash
 git clone https://github.com/andrzejnovak/hsf-india-hww.git && cd hsf-india-hww
 python3 -m sbh check --task hww --submission examples/stub_submission --dataset datasets/public/seed_000 --determinism   # PASS
-python3 -m sbh check --task hww --submission examples/template_fit --dataset datasets/public/seed_000 --determinism     # PASS, mH ≈ 123 ± 6, mu ≈ 0.88 ± 0.14, 3 s
-python3 -m sbh check --task hww --submission examples/nn_fit --dataset datasets/public/seed_000 --determinism           # PASS, 8 s
+python3 -m sbh check --task hww --submission examples/template_fit --dataset datasets/public/seed_000 --determinism     # PASS, mu ≈ 1.07 ± 0.17, 1 s
+python3 -m sbh check --task hww --submission examples/nn_fit --dataset datasets/public/seed_000 --determinism           # PASS, mu ≈ 0.98 ± 0.11, 2 s
 python3 make_suite.py suites/t --n 6 --seed 3 && python3 score_suite.py examples/template_fit suites/t --plot r.png    # slope ≈ 1, FDR 0
 python3 explore.py suites/t/seed_001 --out e.png && python3 make_plots.py --fast --out /tmp/figs                       # the pictures regenerate
 bash new_team.sh test && ls ~/hack-test                                                                                 # then rm -rf ~/hack-test
 ```
-The reference on 30 datasets: m_H slope 1.05, pull width 0.9–1.2; μ slope 1.03, width 0.6–1.2 (suite to
-suite); no false discoveries; every strong dataset discovered. The network example: the same within noise, with
-error bars 3–7 % smaller. `examples/nn_fit/model.json` is trained by `train.py` (scikit-learn, 10 s); retrain
+On 30 datasets: the m_T fit has μ slope 0.99 and pull width 0.8, the score fit slope 0.97 and width 0.7,
+no false discoveries, and the score fit's error bars are a third smaller (0.11 against 0.17 on the public
+dataset). `examples/nn_fit/model.json` is trained by `train.py` (scikit-learn, 10 s); retrain
 it if the pool changes. `examples/*/hww.py` are copies of the root `hww.py`: keep them in step.
 
 ## Before the start
@@ -61,8 +62,7 @@ drawn from a seed made up in the job and never printed; the submissions run as `
 unreadable (`--as nobody`) and a scrubbed environment. After the deadline: Actions → "sealed run" → Run
 workflow with plots = true (and a larger n if you like) for the final table with the recovery plots, committed
 under `results/`; the plots show the planted values per dataset, which is why they wait for the deadline. A
-fixed seed input makes two runs comparable. About 1 minute per team for a pipeline like the reference, 4 for
-the network one (21 datasets plus the self-check).
+fixed seed input makes two runs comparable. About a minute per team for either example (21 datasets plus the self-check).
 
 ## The sealed run by hand
 

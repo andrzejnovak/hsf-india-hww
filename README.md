@@ -1,12 +1,12 @@
-# Hackathon: find the Higgs in H → WW
+# Hackathon: how much Higgs is in the data?
 
-A Higgs boson of unknown mass and strength, decaying to two W bosons and then two leptons and two neutrinos, on
-top of the WW continuum, in simulated 13 TeV data. You build a pipeline on the one public dataset, with the
-simulation beside it to train on; the organisers run it, unchanged, on sealed datasets with hidden truths and
-score whether your mass and signal strength follow the truth with honest error bars.
+A Higgs boson decaying to two W bosons and then two leptons and two neutrinos, on top of the WW continuum, in
+simulated 13 TeV data; how much of it there is, is unknown. You build a pipeline on the one public dataset,
+with the simulation beside it to train on; the organisers run it, unchanged, on sealed datasets with hidden
+truths and score whether your signal strength follows the truth with honest error bars.
 The pitch: [the slides](https://andrzejnovak.github.io/talks/2026-10-13-hsf-india/index.html?profile=hack).
-Everything else, the three levels, the loop with the agent, where the classifier goes, the physics in pictures,
-debugging, what gets scored, the rules: [`GUIDE.md`](GUIDE.md). The task itself: [`PROMPT.md`](PROMPT.md),
+Everything else, the big picture for non-physicists, the three levels, the loop with the agent, where the
+classifier goes, the physics in pictures, debugging, what gets scored, the rules: [`GUIDE.md`](GUIDE.md). The task itself: [`PROMPT.md`](PROMPT.md),
 [`DATASET.md`](DATASET.md), [`EVAL_CONTRACT.md`](EVAL_CONTRACT.md).
 
 ## Setup
@@ -22,8 +22,8 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: the task files, the
 
 The second line must end with `determinism (second clean run): PASS`. Your pipeline is `~/hack-<team-name>/submission/`:
 a `run.sh <dataset_dir> <output_dir>` that writes `<output_dir>/RESULT.json`, Python 3 with numpy and scipy only.
-`examples/template_fit/` is a working start (a kinematic fit); `examples/nn_fit/` is the same fit with a
-classifier plugged in. The self-check with `--submission ~/hack-<team-name>/submission` tells you whether
+`examples/template_fit/` is a working start (a fit of the transverse mass); `examples/nn_fit/` fits a
+classifier's score instead. The self-check with `--submission ~/hack-<team-name>/submission` tells you whether
 yours runs.
 
 ## Submit
@@ -43,9 +43,5 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-14 07:50 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
-
-| # | team     | level | slope mH | slope μ | pull width mH | pull width μ | false disc. | power | recovery | self-check | submitted                                      |
-|---|----------|-------|----------|---------|---------------|--------------|-------------|-------|----------|------------|------------------------------------------------|
-| 1 | demo-ref | 2     | 1.03     | 1.08    | 1.07          | 0.97         | 0/5         | 1.00  | 21/21    | PASS       | bb580e9 (2026-10-14T07:48:50Z by andrzejnovak) |
+_No sealed run yet._
 <!-- /leaderboard -->
