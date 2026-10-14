@@ -22,7 +22,7 @@ SCALED = ["lep_pt_0", "lep_pt_1", "met_et"]   # what the morphing scales
 # the reference binning of the two-dimensional templates (m_T x m_ll); overflow is dropped
 MT_EDGES = np.linspace(0.0, 250.0, 26)
 MLL_EDGES = np.linspace(0.0, 150.0, 11)
-MASS_GRID = np.arange(100.0, 150.1, 5.0)
+MASS_GRID = np.arange(100.0, 150.1, 2.5)   # 2.5 GeV steps: with 5 the interpolated templates are visibly broader than the truth
 
 
 def load(path):
