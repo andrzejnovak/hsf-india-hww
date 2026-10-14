@@ -51,5 +51,5 @@ are exact. The number of signal events expected at μ = 1 does not depend on the
 ## The public dataset
 
 `datasets/public/seed_000` has a Higgs of mass **125 GeV** at **μ = 1** and the background at its **nominal
-normalisation** (`truth.json`). The sealed datasets have their own planted mass, signal strength and background
-normalisation, see `PROMPT.md`; they are not published.
+normalisation** (`truth.json`). The sealed datasets have their own planted values, see `PROMPT.md`; they are not
+published.

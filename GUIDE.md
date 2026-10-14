@@ -24,19 +24,15 @@ an agent can write that code, and how we would know it got it right.
 
 That last question is the hackathon. The organisers hold datasets with the answers hidden; your pipeline runs on
 them unchanged; the score is whether your μ follows the planted one, and whether your error bars are honest.
-The planted mass moves too, between 100 and 150 GeV: a pipeline that assumes the public 125 GeV gets μ wrong,
-so the mass has to be part of the fit, and reporting it is a bonus. Nothing in this repository is beyond a CS
-undergraduate: it is histograms, a maximum-likelihood fit of a three-parameter model, and a small neural
-network.
+Nothing in this repository is beyond a CS undergraduate: it is histograms, a maximum-likelihood fit of a model
+with a few parameters, and a small neural network.
 
 ## Three levels
 
 1. **A pipeline.** A `run.sh` that measures μ from the data, passes the self-check and follows the truth on a
-   suite you made (slope ≈ 1), with the mass free in the fit. `examples/template_fit` is one: a fit of the
-   (m<sub>T</sub>, m<sub>ll</sub>) histogram with three parameters, the mass, μ and the background rate, the
-   signal shape at each mass made by the morphing rule of `DATASET.md`. That is the leaderboard's `baseline-mt`
-   row. The agent can write such a pipeline from `PROMPT.md`; the usual way it fails is to fix the mass at the
-   public dataset's 125 GeV, which gives μ a slope of 1.3 and pulls of width 2.6 on the sealed datasets.
+   suite you made (slope ≈ 1). `examples/template_fit` is one: a fit of the (m<sub>T</sub>, m<sub>ll</sub>)
+   histogram, the leaderboard's `baseline-mt` row. The agent can write such a pipeline from `PROMPT.md`; make
+   your own suites (step 4 of the loop) and look at what they plant before you trust it.
 2. **The classifier, plugged in, and still honest.** Train on the simulation, export the model as text, score
    the data in `run.sh`, fit the score together with a quantity that carries the mass. `examples/tutorial_nn`
    is the tutorial's own network plugged in unchanged (six raw columns, three hidden layers), fitted in bins of
@@ -46,8 +42,8 @@ network.
    is one step past it, ten physics features instead of six raw ones (± 0.14, ± 5.9 GeV), still not past the
    template fit: the room is real. The level is
    reached when the error bars on μ are honest on the sealed datasets (pulls of width ≈ 1) and nothing is
-   claimed on the empty ones; the mass, reported on every dataset, is scored by the same rule as a bonus that
-   orders teams within a level. Better features, a classifier that keeps the mass information, a
+   claimed on the empty ones; the optional `mH` of the contract, reported on every dataset, is scored by the
+   same rule as a bonus that orders teams within a level. Better features, a classifier that keeps the mass information, a
    three-dimensional score × m<sub>T</sub> × m<sub>ll</sub> fit, a treatment of the template statistics are
    all open.
 3. **The agent does it.** A brief, a check it must pass, a reviewer, a second model: whatever gets
@@ -151,24 +147,21 @@ yours.
    m<sub>T</sub> and a low dilepton mass m<sub>ll</sub> (the two leptons come out close together, a consequence of
    the Higgs having no spin). The pool holds the simulation of both, with weights normalised to the expected
    events at 1000 fb⁻¹: 618 signal events at μ = 1 on 15 969 background.
-   **[`figs/morph.png`](figs/morph.png) — a heavier or lighter Higgs.** The simulation exists at 125 GeV; a
-   Higgs of mass m is, by the rule of `DATASET.md`, the same events with the lepton momenta and the missing
-   energy scaled by m / 125. The bump in m<sub>T</sub> moves with the mass: that is what the fit reads it
-   from.
 2. **[`figs/score.png`](figs/score.png) — the classifier.** A small network trained on the simulation gives each
    event a score between 0 and 1. Signal piles up at high score, background at low; the same score on the data
    is what the network pipeline fits.
 3. **[`figs/fit.png`](figs/fit.png) — a fit.** A measurement is a model with a few knobs turned until it matches
-   the data: here the mass, the signal strength μ and the background rate b (maximum likelihood: the knobs
-   that make the observed counts most probable, bin by bin). Move one knob away from its best value, re-tune
-   the others, and the match gets worse; the width of that valley, where it is less than ½ unit worse, is the
-   error bar. Left, the valley in μ; right, the valley in the mass, for the three example pipelines. An honest
-   error bar covers the truth about two times in three; that is what the sealed run tests.
-4. **[`figs/recovery.png`](figs/recovery.png) — the truth moves.** Every sealed dataset has its own planted
-   mass, μ (one dataset in five has none) and background rate. The example pipelines follow the diagonal on 30
-   of them, in both numbers; answer the public values every time and your slopes are 0.
+   the data: the signal strength μ, the background rate b, whatever else the shapes depend on (maximum
+   likelihood: the knobs that make the observed counts most probable, bin by bin). Move one knob away from its
+   best value, re-tune the others, and the match gets worse; the width of that valley, where it is less than ½
+   unit worse, is the error bar. Left, the valley in μ for the three example pipelines; right, the valley in
+   the other parameter the examples fit. An honest error bar covers the truth about two times in three; that
+   is what the sealed run tests.
+4. **[`figs/recovery.png`](figs/recovery.png) — the truth moves.** Every sealed dataset has its own planted μ
+   (one dataset in five has none) and background rate. The example pipelines follow the diagonal on 30 of
+   them; answer the public values every time and your slope is 0.
 5. **[`figs/pulls.png`](figs/pulls.png) — calibration.** pull = (reported − planted) / your error bar; a
-   calibrated pipeline has pulls of width 1, for the mass and for μ.
+   calibrated pipeline has pulls of width 1.
 
 The real analysis this is a toy of: the HSF-India project
 [H → WW with CMS Open Data NanoAOD](https://github.com/davidlange6/H-to-WW-NanoAOD-analysis), which fits the
@@ -198,8 +191,8 @@ aggregates; they are all in the sealed run's `results/`):
   small *and* too large both fail), and no discovery is claimed on a dataset without a Higgs.
 - **level 3** is judged when you present: how the agent got there.
 
-The mass is optional: reported on every scored dataset, it gets a level by the same rule, which orders teams
-within a level and never costs anything. `score_suite.py` prints your level on your own suites.
+The contract's optional `mH`, reported on every scored dataset, gets a level by the same rule, which orders
+teams within a level and never costs anything. `score_suite.py` prints your level on your own suites.
 
 ## Rules
 
