@@ -22,8 +22,9 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: the task files, the
 
 The second line must end with `determinism (second clean run): PASS`. Your pipeline is `~/hack-<team-name>/submission/`:
 a `run.sh <dataset_dir> <output_dir>` that writes `<output_dir>/RESULT.json`, Python 3 with numpy and scipy only.
-`examples/template_fit/` is a working start (a fit of the transverse mass); `examples/nn_fit/` fits a
-classifier's score instead. The self-check with `--submission ~/hack-<team-name>/submission` tells you whether
+`examples/template_fit/` is a working start (a fit of the transverse and dilepton masses for the Higgs mass, the
+signal strength and the background rate; the leaderboard's `baseline-mt`); `examples/tutorial_nn/` plugs the ML
+tutorial's network into the same fit (`baseline-nn`), and `examples/nn_fit/` does the same with better features. The self-check with `--submission ~/hack-<team-name>/submission` tells you whether
 yours runs.
 
 ## Submit

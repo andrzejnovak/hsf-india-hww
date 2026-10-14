@@ -35,7 +35,8 @@ Limits per dataset: 600 s wall clock, 6 GB memory.
 
     {
       "pois": [
-        {"name": "mu", "value": f, "stat": f, "syst": f, "total": f}
+        {"name": "mu", "value": f, "stat": f, "syst": f, "total": f},
+        {"name": "mH", "value": f, "stat": f, "syst": f, "total": f}    # optional
       ],
       "significance_obs": f,          # local, in sigma; 0 if no excess
       "discovery": bool,              # your discovery claim (e.g. Z >= 5)
@@ -44,7 +45,7 @@ Limits per dataset: 600 s wall clock, 6 GB memory.
       }
     }
 
-`mu` relative to the Standard Model expectation.  All values
+`mu` relative to the Standard Model expectation; `mH`, optional, in GeV.  All values
 finite; `total` > 0 and consistent with `stat ⊕ syst`.  Nuisance names follow
 the grammar of `sbh/hep/names.py`; this task's own are `hww_<label>`:
 `hww_bkg_norm` (the background normalisation relative to nominal).  Extra keys
@@ -52,7 +53,8 @@ are allowed and ignored.
 
 ## 3. How you are scored (aggregate metrics only)
 
-Across the sealed suite, for `mu`:
+Across the sealed suite, for `mu` (and for `mH` where you report it on every scored dataset: a bonus,
+never a penalty):
 
 - **sensitivity** — slope of recovered vs injected value (unit slope = faithful
   measurement; a constant output scores zero).  Gate.

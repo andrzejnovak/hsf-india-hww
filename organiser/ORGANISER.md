@@ -1,11 +1,13 @@
 # Organiser notes
 
 What is here: the H → WW toy on the participant bundle of `jfc-mit/slopbench_harness` (`sbh/`, the self-check;
-`tasks/hww/`, the task stub), the shared physics (`hww.py`: kinematics, templates; a mass-morphing function that
-the task no longer uses), the generator (`make_suite.py`, truth beside each dataset), the scorer
-(`score_suite.py`, the contract's aggregates on a home-made suite, no sandbox), two example pipelines
-(`examples/template_fit`, the reference: a fit of the m_T distribution; `examples/nn_fit`: a fit of a small
-network's score), `explore.py`, `make_plots.py` (the figures of
+`tasks/hww/`, the task stub), the shared physics (`hww.py`: kinematics, the mass morphing, templates), the
+generator (`make_suite.py`, truth beside each dataset), the scorer
+(`score_suite.py`, the contract's aggregates on a home-made suite, no sandbox), three example pipelines
+(`examples/template_fit`, the reference: a three-parameter fit of the (m_T, m_ll) histogram, the posted
+`baseline-mt`; `examples/tutorial_nn`: the ML tutorial's network on its six raw columns in a score × m_T fit,
+the posted `baseline-nn`; `examples/nn_fit`: the same network on ten physics features, the worked step past
+the baseline), `explore.py`, `make_plots.py` (the figures of
 GUIDE.md and the slides), `submit.sh`, `new_team.sh`, and the sealed run (`organiser/sealed_run.py` and
 `.github/workflows/sealed_run.yml`).
 
@@ -18,11 +20,15 @@ scaled from the file's 10 fb⁻¹ to **1000 fb⁻¹**: 618 signal events at μ =
 and jet energies of the original are in MeV while its momenta are in GeV; the pool keeps momenta only.
 
 Pseudo-data are drawn from the pool with probability proportional to the weight: at 1000 fb⁻¹ about 8 % of
-the background draws repeat an event already drawn. The truths: μ uniform in [0, 3] with a fifth at 0, the
-background normalisation uniform within ±10 %; the mass is 125 GeV everywhere (`hww.morph` can make a signal
-of another mass by scaling lepton pT and missing ET, which an earlier version of the task planted; the
-generator no longer does). `expected_significance` in truth.json is the Asimov significance of the 2D
-(m_T, m_ll) templates at the truth; datasets with ≥ 5 are the scored ones.
+the background draws repeat an event already drawn. The truths: the mass uniform in [100, 150] GeV, μ uniform
+in [0, 3] with a fifth at 0, the background normalisation uniform within ±10 %. A signal of mass m is the
+125 GeV sample with lepton pT and missing ET scaled by m / 125 (`hww.morph`), the rule DATASET.md states, so
+templates built the same way are exact. `expected_significance` in truth.json is the Asimov significance of
+the 2D (m_T, m_ll) templates at the truth; datasets with ≥ 5 are the scored ones. The mass is in the task
+because without it the task is too easy: an agent reached level 2 from the bare prompt in one session; with
+it, the pipeline that fixes the mass at the public 125 GeV has a μ slope of 1.3 and pulls of width 2.6, so it
+stays at level 1. Reporting the mass is optional (`score_suite.OPTIONAL_POIS`): scored by the same rule when
+it is on every scored dataset, it orders teams within a level and never costs anything.
 
 The data events are copies of pool events (morphed for the signal); a determined cheater could match them
 back to the labels. The rule in GUIDE.md and reading the submissions is the mitigation; a held-out pool
@@ -33,16 +39,26 @@ back to the labels. The rule in GUIDE.md and reading the submissions is the miti
 ```bash
 git clone https://github.com/andrzejnovak/hsf-india-hww.git && cd hsf-india-hww
 python3 -m sbh check --task hww --submission examples/stub_submission --dataset datasets/public/seed_000 --determinism   # PASS
-python3 -m sbh check --task hww --submission examples/template_fit --dataset datasets/public/seed_000 --determinism     # PASS, mu ≈ 1.07 ± 0.17, 1 s
-python3 -m sbh check --task hww --submission examples/nn_fit --dataset datasets/public/seed_000 --determinism           # PASS, mu ≈ 0.98 ± 0.11, 2 s
+python3 -m sbh check --task hww --submission examples/template_fit --dataset datasets/public/seed_000 --determinism     # PASS, mH ≈ 123 ± 5, mu ≈ 0.88 ± 0.14, 6 s
+python3 -m sbh check --task hww --submission examples/tutorial_nn --dataset datasets/public/seed_000 --determinism     # PASS, mH ≈ 129 ± 7, mu ≈ 1.05 ± 0.16, 30 s
+python3 -m sbh check --task hww --submission examples/nn_fit --dataset datasets/public/seed_000 --determinism           # PASS, mH ≈ 128 ± 6, mu ≈ 1.01 ± 0.14, 15 s
 python3 make_suite.py suites/t --n 6 --seed 3 && python3 score_suite.py examples/template_fit suites/t --plot r.png    # slope ≈ 1, FDR 0
-python3 explore.py suites/t/seed_001 --out e.png && python3 make_plots.py --fast --out /tmp/figs                       # the pictures regenerate
+python3 explore.py suites/t/seed_001 --out e.png && python3 make_plots.py --fast --out /tmp/figs                       # the pictures regenerate (the full run fits 93 datasets, 15 min)
 bash new_team.sh test && ls ~/hack-test                                                                                 # then rm -rf ~/hack-test
 ```
-On 30 datasets: the m_T fit has μ slope 0.99 and pull width 0.8, the score fit slope 0.97 and width 0.7,
-no false discoveries, and the score fit's error bars are a third smaller (0.11 against 0.17 on the public
-dataset). `examples/nn_fit/model.json` is trained by `train.py` (scikit-learn, 10 s); retrain
-it if the pool changes. `examples/*/hww.py` are copies of the root `hww.py`: keep them in step.
+On 31 datasets: the template fit has μ slope 0.99 and pull width 0.62 (the mass: 1.01 and 1.00), the
+tutorial network's score fit 1.05 and 0.99 (the mass: 0.97 and 1.01), no false discoveries; the error bars on
+the public dataset are 0.14 and 0.16 on μ, 5 and 7 GeV on the mass. The leaderboard posts the first two as `baseline-mt` and `baseline-nn`
+(branches `hack-baseline-mt`, `hack-baseline-nn`): the ten-feature network stays in the kit as the worked
+step past the baseline, so the students have something to beat. `examples/*/model.json` are trained by each
+example's `train.py` (scikit-learn, under a minute); retrain them if the pool changes.
+
+The calibration window is [0.5, 1.5] rather than the [0.7, 1.4] of the toy kit because honest pipelines
+over-cover on μ here: on 31 datasets the (m_T, m_ll) template fit has a pull width of 0.62, and 0.74 even with
+the mass fixed at its planted value, with the scatter of μ̂ (0.095) below its Poisson error (0.125); the score
+fits sit at 0.8–1.0. The pseudo-data are a weighted draw with replacement from a finite pool, so a bin that a
+few heavy background events dominate fluctuates less than Poisson; the fit's likelihood does not know that.
+The window still fails the stub (width 4) and a padded "always ± 1" (width 0.1). `examples/*/hww.py` are copies of the root `hww.py`: keep them in step.
 
 ## Before the start
 

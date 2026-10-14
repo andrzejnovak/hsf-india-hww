@@ -41,8 +41,15 @@ signal is a Higgs boson of mass 125 GeV decaying to two W bosons and then two le
 (gluon fusion and vector-boson fusion production); the background is the continuum production of two W
 bosons (and ZZ) decaying to two leptons and two neutrinos.
 
+## How a signal of another mass is made
+
+The simulation exists at 125 GeV only. A signal of mass m is defined, for this task, as the 125 GeV sample
+with **every lepton transverse momentum and the missing transverse energy multiplied by m / 125**, angles and
+jets unchanged. The data were made with this rule; `hww.py` (`morph`) implements it, and templates built with it
+are exact. The number of signal events expected at μ = 1 does not depend on the mass.
+
 ## The public dataset
 
-`datasets/public/seed_000` has the signal at **μ = 1** and the background at its **nominal normalisation**
-(`truth.json`). The sealed datasets have their own planted signal strength and background normalisation, see
-`PROMPT.md`; they are not published. The Higgs mass is 125 GeV in every dataset.
+`datasets/public/seed_000` has a Higgs of mass **125 GeV** at **μ = 1** and the background at its **nominal
+normalisation** (`truth.json`). The sealed datasets have their own planted mass, signal strength and background
+normalisation, see `PROMPT.md`; they are not published.

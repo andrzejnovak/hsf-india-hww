@@ -19,10 +19,14 @@ import tempfile
 import time
 from pathlib import Path
 
+import math
+
 import numpy as np
 
 Z_APPLICABLE = 5.0
-POIS = ["mu"]                      # what truth.json and RESULT.json are compared on
+POIS = ["mu"]                      # required: what truth.json and RESULT.json are compared on
+OPTIONAL_POIS = ["mH"]             # scored on the seeds where it is reported (a bonus on the leaderboard)
+ALL_POIS = POIS + OPTIONAL_POIS
 UNITS = {"mH": " [GeV]", "mu": ""}
 
 
@@ -61,7 +65,7 @@ def poi(res, name):
 
 
 
-WIDTH_OK = (0.7, 1.4)
+WIDTH_OK = (0.5, 1.5)   # honest pipelines sit at 0.6-1.0 on this toy (ORGANISER.md): the window catches padded and overconfident error bars, not that
 
 
 def load_truth(ds: Path, truths: Path = None):
@@ -79,7 +83,7 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
     if not seeds:
         raise SystemExit(f"no truths for seed_* under {suite}: make a suite with make_suite.py")
     rows = []
-    log(f"{'seed':9s} {'status':8s} {'wall':>6s}  " + "  ".join(f"{p + ' planted':>10s} {'reported':>16s} {'pull':>6s}" for p in POIS)
+    log(f"{'seed':9s} {'status':8s} {'wall':>6s}  " + "  ".join(f"{p + ' planted':>10s} {'reported':>16s} {'pull':>6s}" for p in ALL_POIS)
         + f"  {'Z_exp':>5s} {'Z_obs':>5s} disc")
     for ds in seeds:
         truth = load_truth(ds, truths)
@@ -88,6 +92,11 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
         if res is not None:
             try:
                 vals = {p: poi(res, p) for p in POIS}
+                for p in OPTIONAL_POIS:
+                    try:
+                        vals[p] = poi(res, p)
+                    except (KeyError, TypeError, ValueError):
+                        pass
                 row.update(ok=True, **{p: v for p, (v, e) in vals.items()}, **{p + "_e": e for p, (v, e) in vals.items()},
                            z=float(res.get("significance_obs", 0.0)), disc=bool(res.get("discovery", False)))
             except (KeyError, TypeError, ValueError) as e:
@@ -95,12 +104,14 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
                 row["status"] = status
         zexp = truth.get("expected_significance", 0.0)
         if row["ok"]:
-            for p in POIS:
-                row[f"pull_{p}"] = (row[p] - truth[p]) / row[p + "_e"]
-            log(f"{ds.name:9s} {'ok':8s} {wall:5.1f}s  " + "  ".join(f"{truth[p]:10.2f} {row[p]:8.2f} ± {row[p + '_e']:5.2f} {row['pull_' + p]:6.2f}" for p in POIS)
+            for p in ALL_POIS:
+                if p in row:
+                    row[f"pull_{p}"] = (row[p] - truth[p]) / row[p + "_e"]
+            log(f"{ds.name:9s} {'ok':8s} {wall:5.1f}s  " + "  ".join(
+                f"{truth[p]:10.2f} {row[p]:8.2f} ± {row[p + '_e']:5.2f} {row['pull_' + p]:6.2f}" if p in row else f"{truth[p]:10.2f} {'not reported':>16s} {'-':>6s}" for p in ALL_POIS)
                 + f"  {zexp:5.1f} {row['z']:5.1f} {'yes' if row['disc'] else 'no'}")
         else:
-            log(f"{ds.name:9s} {str(status):8s} {wall:5.1f}s  " + "  ".join(f"{truth[p]:10.2f} {'-':>16s} {'-':>6s}" for p in POIS)
+            log(f"{ds.name:9s} {str(status):8s} {wall:5.1f}s  " + "  ".join(f"{truth[p]:10.2f} {'-':>16s} {'-':>6s}" for p in ALL_POIS)
                 + f"  {zexp:5.1f}" + (f"\n    {errlog.strip()[-300:]}" if errlog.strip() else ""))
         rows.append(row)
     agg = aggregate(rows)
@@ -116,12 +127,13 @@ def aggregate(rows):
     null = [r for r in ok if r["truth"]["mu"] == 0]
     agg = {"n": len(rows), "n_ok": len(ok), "recovery": len(ok) / max(len(rows), 1),
            "n_strong": len(strong), "n_null": len(null), "pois": {}}
-    for name in POIS:
-        if len(strong) < 3:
+    for name in ALL_POIS:
+        have = [r for r in strong if name in r]       # an optional POI counts on the seeds where it is reported
+        if len(have) < 3 or (name in OPTIONAL_POIS and len(have) < len(strong)):
             agg["pois"][name] = None
             continue
-        x = np.array([r["truth"][name] for r in strong]); y = np.array([r[name] for r in strong])
-        pulls = np.array([r[f"pull_{name}"] for r in strong])
+        x = np.array([r["truth"][name] for r in have]); y = np.array([r[name] for r in have])
+        pulls = np.array([r[f"pull_{name}"] for r in have])
         slope = float(np.polyfit(x, y, 1)[0]) if np.ptp(x) > 0 else float("nan")
         width = float(np.sqrt(np.mean(pulls ** 2)))
         verdict = ("OK" if WIDTH_OK[0] <= width <= WIDTH_OK[1] else
@@ -134,19 +146,31 @@ def aggregate(rows):
     return agg
 
 
+def level_of(agg, poi="mu"):
+    """The leaderboard's level for a POI: 0 no measurement (a dataset that did not run, no slope, or slope < 0.8),
+    1 follows the truth (slope >= 0.8), 2 and honest error bars (pull width within WIDTH_OK; for mu also no
+    discovery claimed on an empty dataset). Level 3 is judged in the room, not here."""
+    a = agg["pois"].get(poi)
+    if agg["recovery"] < 0.9 or a is None or not math.isfinite(a["slope"]) or a["slope"] < 0.8:
+        return 0
+    honest = WIDTH_OK[0] <= a["width"] <= WIDTH_OK[1] and (poi != "mu" or not agg["false_discoveries"])
+    return 2 if honest else 1
+
+
 def report(agg, log=print):
     log(f"\nrecovery: {agg['n_ok']}/{agg['n']} seeds completed with a valid RESULT.json")
-    log(f"scored for {', '.join(POIS)}: {agg['n_strong']} seeds with expected significance >= {Z_APPLICABLE:g}; "
+    log(f"scored for {', '.join(POIS)} (and {', '.join(OPTIONAL_POIS)} if reported): {agg['n_strong']} seeds with expected significance >= {Z_APPLICABLE:g}; "
         f"{agg['n_null']} null seeds")
-    for name in POIS:
+    for name in ALL_POIS:
         a = agg["pois"][name]
         if a is None:
-            log(f"  {name}: fewer than 3 scorable seeds, no slope")
+            log(f"  {name}: " + ("not reported on every scorable seed (optional: no score)" if name in OPTIONAL_POIS else "fewer than 3 scorable seeds, no slope"))
             continue
         log(f"  {name}: sensitivity slope {a['slope']:5.2f} (1 = faithful, 0 = constant) | bias (mean pull) {a['bias']:+5.2f} "
             f"| calibration (pull RMS) {a['width']:4.2f} -> {a['verdict']}")
     if agg["fdr"] is not None:
         log(f"  false-discovery rate: {agg['fdr']:.2f} ({agg['false_discoveries']} of {agg['n_null']} null seeds claimed)")
+    log(f"  level: {level_of(agg)} on mu" + (f", {level_of(agg, 'mH')} on the mass (optional)" if agg["pois"].get("mH") else "; the mass not reported (optional)"))
     if agg["power"] is not None:
         log(f"  discovery power: {agg['power']:.2f} ({agg['discoveries']} of {agg['n_strong']} strong seeds claimed)")
 
@@ -160,10 +184,13 @@ def plot(rows, path, title=None):
     except ImportError:
         return False
     ok = [r for r in rows if r["ok"]]
-    fig, axes = plt.subplots(1, len(POIS), figsize=(4.8 * len(POIS), 4.2), squeeze=False)
-    for ax, name in zip(axes[0], POIS):
+    names = [p for p in ALL_POIS if any(p in r for r in ok)]
+    fig, axes = plt.subplots(1, len(names), figsize=(4.8 * len(names), 4.2), squeeze=False)
+    for ax, name in zip(axes[0], names):
         unit = UNITS.get(name, "")
         for r in ok:
+            if name not in r:
+                continue
             s = r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
             ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=4, capsize=2,
                         color="C0" if s else "0.6", alpha=0.9 if s else 0.6)

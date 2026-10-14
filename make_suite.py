@@ -3,8 +3,8 @@
 
     python3 make_suite.py suites/mine --n 10 --seed 7 [--pool datasets/public/seed_000/mc/pool.npz] [--design JSON]
 
-seed_000 is at the public truth (mu = 1, nominal background); the others draw mu in [0, 3] with a fifth at 0
-and the background normalisation within 10 % of nominal. The Higgs mass is 125 GeV in every dataset. Each dataset holds
+seed_000 is at the public truth (m_H = 125 GeV, mu = 1, nominal background); the others draw m_H in [100, 150],
+mu in [0, 3] with a fifth at 0, and the background normalisation within 10 % of nominal. Each dataset holds
 data/events.npz (the pseudo-data: two leptons, missing ET, jets; no labels), mc/pool.npz and mc/pool_meta.json
 (the pool, hard-linked), and truth.json. manifest.json lists the truths. --design fixes truths per sealed seed
 (a JSON list of dicts; unset keys are drawn). The sealed suite is made the same way with a seed you don't have.
@@ -19,8 +19,7 @@ import numpy as np
 
 import hww as H
 
-PRIORS = {"mu_range": [0.0, 3.0], "null_fraction": 0.2, "bkg_norm_range": [0.9, 1.1]}
-M_H = 125.0
+PRIORS = {"mH_range": [100.0, 150.0], "mu_range": [0.0, 3.0], "null_fraction": 0.2, "bkg_norm_range": [0.9, 1.1]}
 PUBLIC_TRUTH = {"mH": 125.0, "mu": 1.0, "bkg_norm": 1.0}
 DEFAULT_POOL = Path(__file__).resolve().parent / "datasets" / "public" / "seed_000" / "mc" / "pool.npz"
 
@@ -42,13 +41,13 @@ class Pool:
 
     def templates(self):
         if self._templates is None:
-            self._templates = H.templates({k: np.concatenate([self.sig[k], self.bkg[k]]) for k in self.sig}, masses=[M_H])
+            self._templates = H.templates({**self.sig, **{k: np.concatenate([self.sig[k], self.bkg[k]]) for k in self.sig}})
         return self._templates
 
 
 def draw_truth(rng, priors, fixed=None):
     f = fixed or {}
-    t = {"mH": M_H}
+    t = {"mH": float(f.get("mH", rng.uniform(*priors["mH_range"])))}
     if "mu" in f:
         t["mu"] = float(f["mu"])
     else:
@@ -64,7 +63,7 @@ def generate(truth, rng, d: Path, pool: Pool):
     n_bkg = int(rng.poisson(truth["bkg_norm"] * pool.B_exp))
     si = rng.choice(len(pool.sig_p), size=n_sig, p=pool.sig_p)
     bi = rng.choice(len(pool.bkg_p), size=n_bkg, p=pool.bkg_p)
-    sig = H.select(pool.sig, si)
+    sig = H.morph(H.select(pool.sig, si), truth["mH"])
     bkg = H.select(pool.bkg, bi)
     perm = rng.permutation(n_sig + n_bkg)
     ev = {c: np.concatenate([sig[c], bkg[c]])[perm] for c in H.EVENT_COLS}
@@ -101,7 +100,7 @@ def build(out: Path, n: int = 10, seed: int = 1, pool_path=DEFAULT_POOL, design=
         full = generate(truth, rng, d, pool)
         truths.append({"seed": d.name, **full})
         tag = "public" if i == 0 else f"Z_exp={full['expected_significance']:.1f}"
-        log(f"{d.name}  mu={truth['mu']:.2f}  bkg_norm={truth['bkg_norm']:.3f}  "
+        log(f"{d.name}  mH={truth['mH']:.2f}  mu={truth['mu']:.2f}  bkg_norm={truth['bkg_norm']:.3f}  "
             f"events {full['n_signal_realized'] + full['n_background_realized']}  {tag}")
     (out / "manifest.json").write_text(json.dumps({"task": "hww", "master_seed": seed, "pool": str(pool.path),
                                                    "priors": PRIORS, "seeds": truths}, indent=1))
