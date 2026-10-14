@@ -1,0 +1,46 @@
+{
+ "lumi_fb": 1000.0,
+ "columns": [
+  "lep_pt_0",
+  "lep_eta_0",
+  "lep_phi_0",
+  "lep_pt_1",
+  "lep_eta_1",
+  "lep_phi_1",
+  "met_et",
+  "met_phi",
+  "jet_pt_0",
+  "jet_eta_0",
+  "jet_phi_0",
+  "jet_pt_1",
+  "jet_eta_1",
+  "jet_phi_1",
+  "lep_charge_0",
+  "lep_charge_1",
+  "lep_type_0",
+  "lep_type_1",
+  "jet_n"
+ ],
+ "processes": {
+  "345323": {
+   "name": "VBF H->WW->lvlv (m_H 125)",
+   "label": 1,
+   "events": 198462,
+   "expected_events": 39.83
+  },
+  "345324": {
+   "name": "ggF H->WW->lvlv (m_H 125)",
+   "label": 1,
+   "events": 198514,
+   "expected_events": 578.11
+  },
+  "363492": {
+   "name": "qq->WW/ZZ->llvv",
+   "label": 0,
+   "events": 180381,
+   "expected_events": 15968.85
+  }
+ },
+ "signal_expected": 617.94,
+ "background_expected": 15968.85
+}

@@ -1,0 +1,6 @@
+work/
+suites/
+out/
+/*.png
+__pycache__/
+.venv/

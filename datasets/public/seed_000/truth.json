@@ -1,0 +1,9 @@
+{
+ "mH": 125.0,
+ "mu": 1.0,
+ "bkg_norm": 1.0,
+ "n_signal_realized": 602,
+ "n_background_realized": 15960,
+ "expected_significance": 10.348,
+ "lumi_fb": 1000.0
+}
