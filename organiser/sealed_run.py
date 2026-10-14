@@ -34,10 +34,10 @@ Levels, as the pitch defines them (change `level` below if the rule changes):
   0  self-check failed, fewer than 90 % of the datasets gave a valid RESULT.json, or no slope
   1  a measurement: the slope of reported vs planted mu is at least 0.8
   2  level 1 with honest error bars: a pull width within [0.5, 1.5], and no false discovery
-The mass is optional: a team that reports mH on every scored dataset gets a mass level by the same rule
-(1: slope >= 0.8; 2: and width within [0.5, 1.5]), which orders teams within a level.
+The mass is optional and scored independently: a team that reports mH on every scored dataset gets a mass
+level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when it is not reported.
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
-Order: level, then the mass level, then the distance |slope - 1| + |ln width| on mu, smallest first.
+Order: the mu level, then the mass level, then the distance |slope - 1| + |ln width| on mu, smallest first.
 Each sbh check run takes two runs of the submission and the scoring --n runs: budget about 2 minutes per team
 with a pipeline like examples/naive_fit.
 """
@@ -214,13 +214,12 @@ def publish(entries, readme: Path, results: Path, plots: bool, log):
 
 def table_rows(entries):
     entries.sort(key=lambda e: (-e["level"], -mass_level(e["agg"]), e["distance"], e["team"]))
-    head = ["#", "team", "level", "mass (optional)", "slope μ", "pull width μ", "false disc.", "self-check", "submitted"]
+    head = ["#", "team", "level μ", "level mass", "slope μ", "pull width μ", "slope mass", "pull width mass", "false disc.", "self-check", "submitted"]
     rows = []
     for i, e in enumerate(entries, 1):
         a = e["agg"]; mu, mh = a["pois"].get("mu"), a["pois"].get("mH")
-        rows.append([str(i), e["team"], str(e["level"]),
-                     (f"level {mass_level(a)} (slope {mh['slope']:.2f}, width {mh['width']:.2f})" if mh else "–"),
-                     fmt(mu and mu["slope"]), fmt(mu and mu["width"]),
+        rows.append([str(i), e["team"], str(e["level"]), str(mass_level(a)) if mh else "0",
+                     fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fmt(mh and mh["slope"]), fmt(mh and mh["width"]),
                      f"{a['false_discoveries']}/{a['n_null']}" if a["n_null"] else "–",
                      "PASS" if e["check_ok"] else "FAIL", e.get("submitted") or "–"])
     w = [max(len(h), *(len(r[j]) for r in rows)) if rows else len(h) for j, h in enumerate(head)]
@@ -233,8 +232,8 @@ def leaderboard(entries, path_md: Path, path_json: Path, log):
     text = table_rows(entries)
     path_md.write_text(f"# Leaderboard\n\n{text}\n\nlevel 0: no measurement (the self-check, a dataset that did not run, or a slope of μ below 0.8); "
                        f"1: follows the truth (slope ≥ 0.8); 2: and honest error bars (pull width in [{S.WIDTH_OK[0]}, {S.WIDTH_OK[1]}], no false discovery). "
-                       f"The mass is optional: reported on every scored dataset, it gets a level by the same rule and orders teams within a level. "
-                       f"Level 3 is judged in the room. The full numbers are in results/.\n")
+                       f"The mass (`mH` in RESULT.json) is optional and scored on its own, by the same rule, when it is reported on every scored dataset. "
+                       f"Order: the μ level, then the mass level. Level 3 is judged in the room. The full numbers are in results/.\n")
     path_json.write_text(json.dumps([{k: v for k, v in e.items() if k != "rows"} for e in entries], indent=1, default=str))
     log("\n" + text)
     log(f"\nwritten: {path_md}, {path_json}; per team: {path_md.parent}/<team>/recovery.png, score.txt, check.txt")

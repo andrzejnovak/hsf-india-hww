@@ -42,8 +42,8 @@ with a few parameters, and a small neural network.
    is one step past it, ten physics features instead of six raw ones (± 0.14, ± 5.9 GeV), still not past the
    template fit: the room is real. The level is
    reached when the error bars on μ are honest on the sealed datasets (pulls of width ≈ 1) and nothing is
-   claimed on the empty ones; the optional `mH` of the contract, reported on every dataset, is scored by the
-   same rule as a bonus that orders teams within a level. Better features, a classifier that keeps the mass information, a
+   claimed on the empty ones; the optional `mH` of the contract, reported on every dataset, gets its own level
+   by the same rule, scored independently of μ. Better features, a classifier that keeps the mass information, a
    three-dimensional score × m<sub>T</sub> × m<sub>ll</sub> fit, a treatment of the template statistics are
    all open.
 3. **The agent does it.** A brief, a check it must pass, a reviewer, a second model: whatever gets
@@ -191,8 +191,9 @@ aggregates; they are all in the sealed run's `results/`):
   small *and* too large both fail), and no discovery is claimed on a dataset without a Higgs.
 - **level 3** is judged when you present: how the agent got there.
 
-The contract's optional `mH`, reported on every scored dataset, gets a level by the same rule, which orders
-teams within a level and never costs anything. `score_suite.py` prints your level on your own suites.
+The contract's optional `mH`, reported on every scored dataset, gets its own level by the same rule, scored
+independently of μ (0 when it is not reported); the leaderboard orders by the μ level first. `score_suite.py`
+prints both levels on your own suites.
 
 ## Rules
 
@@ -204,8 +205,8 @@ teams within a level and never costs anything. `score_suite.py` prints your leve
 - The data are drawn from the simulation you train on. Matching data events back to pool events to read off
   their labels is cheating, not analysis; the organisers read every submission.
 - Teams of three or so. Model variance is real: run the agent twice before you trust a design.
-- The leaderboard: the level on μ, then the mass level when the mass is reported, then closest to slope 1 and
-  width 1 first. Level 3 is judged when you present: show the prompts and the runs.
+- The leaderboard: the μ level, then the mass level, then closest to slope 1 and width 1 first. Level 3 is
+  judged when you present: show the prompts and the runs.
 
 ## The day
 

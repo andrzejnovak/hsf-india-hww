@@ -28,7 +28,8 @@ the 2D (m_T, m_ll) templates at the truth; datasets with ≥ 5 are the scored on
 because without it the task is too easy: an agent reached level 2 from the bare prompt in one session; with
 it, the pipeline that fixes the mass at the public 125 GeV has a μ slope of 1.3 and pulls of width 2.6, so it
 stays at level 1. Reporting the mass is optional (`score_suite.OPTIONAL_POIS`): scored by the same rule when
-it is on every scored dataset, it orders teams within a level and never costs anything.
+it is on every scored dataset, as a level of its own, independent of the μ level; the leaderboard orders by
+the μ level first.
 
 The data events are copies of pool events (morphed for the signal); a determined cheater could match them
 back to the labels. The rule in GUIDE.md and reading the submissions is the mitigation; a held-out pool
