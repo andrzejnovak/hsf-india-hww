@@ -80,6 +80,34 @@ smaller means padded), and **no false discoveries** on the datasets without a Hi
    Pushing from a Binder session needs a GitHub token as the password (github.com → Settings → Developer
    settings → Personal access tokens); from your laptop it is your usual push.
 
+## What the network should be optimising
+
+The measurement is a fit of the score histogram, so the quantity to make small is **the error on μ that the
+histogram gives**, not the AUC. Two facts set the direction. First, the optimal one-number summary of an event
+for this fit is the likelihood ratio p(x | signal) / p(x | background), and a binary classifier trained with
+cross-entropy on the simulation, with the event weights as sample weights, approximates exactly that: so the
+spec is a probabilistic signal-vs-background classifier, nothing exotic. Second, the information is mostly in
+the kinematics: on this pool a fit of m<sub>T</sub> alone gives σ<sub>μ</sub> ≈ 0.17, a two-dimensional
+(m<sub>T</sub>, m<sub>ll</sub>) fit 0.12, the kit's small network 0.113, and the best classifier we found
+(gradient boosting on 17 features, including the jets, the lepton pseudorapidities and the charge product) 0.108.
+A bigger network buys nothing by itself. What moves the number:
+
+- **the features**: the derived kinematics (m<sub>ll</sub>, m<sub>T</sub>, p<sub>T</sub><sup>ll</sup>,
+  Δφ<sub>ll</sub>) do most of the work; the lepton flavours (same-flavour pairs carry the ZZ part of the
+  background), the jets and the charges add a few per cent;
+- **the weights**: train with the event weights (the background's are far from uniform) or the score is tuned
+  to the wrong mixture;
+- **the binning** of the score histogram: finer bins where the signal sits, enough simulated events per bin that
+  the templates are not noise;
+- **a second axis**: score × m<sub>T</sub> keeps information the score alone compresses away;
+- **honesty**: pulls of width 1 on your own suites come before another per cent of precision. A classifier that is
+  overtrained, or templates with too few simulated events, show up as error bars that are too small.
+
+Measure your own number: `score_suite.py` on a suite of 30 gives the pull width, and the mean quoted error is
+σ<sub>μ</sub>. For the ambitious: a classifier trained for the measurement directly (a loss that is the
+expected σ<sub>μ</sub> of the resulting histogram, differentiable through a soft histogram) is a research
+topic, not a hackathon afternoon, but the pieces are all here.
+
 ## Where the classifier goes
 
 The pool in every dataset (`mc/pool.npz`) is the training set: 577k simulated events with labels and weights, the
