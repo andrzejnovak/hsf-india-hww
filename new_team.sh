@@ -13,7 +13,9 @@ cp "$HERE"/examples/stub_submission/run.sh "$W/submission/run.sh"
 [ -f "$HOME/opencode-exercise/opencode.json" ] && cp "$HOME/opencode-exercise/opencode.json" "$W/" \
   || echo "note: no ~/opencode-exercise/opencode.json (notebook 3 writes it); opencode will not know NRP here"
 printf 'datasets/\n.venv/\n' > "$W/.gitignore"
-( cd "$W" && git init -q && git add -A && git commit -qm "team workspace: task files, public dataset, stub submission" )
+( cd "$W" && git init -q && git add -A \
+  && git -c user.name="$(git config user.name || echo "hack-$1")" -c user.email="$(git config user.email || echo "hack-$1@hackathon.invalid")" \
+         commit -qm "team workspace: task files, public dataset, stub submission" )   # commits even where git has no identity yet (a fresh Binder)
 cat <<EOF
 workspace: $W
   PROMPT.md DATASET.md EVAL_CONTRACT.md   the task
