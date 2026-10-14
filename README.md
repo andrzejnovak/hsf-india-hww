@@ -43,5 +43,9 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_No sealed run yet._
+_Sealed run of 2026-10-14 07:50 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline._
+
+| # | team     | level | slope mH | slope μ | pull width mH | pull width μ | false disc. | power | recovery | self-check | submitted                                      |
+|---|----------|-------|----------|---------|---------------|--------------|-------------|-------|----------|------------|------------------------------------------------|
+| 1 | demo-ref | 2     | 1.03     | 1.08    | 1.07          | 0.97         | 0/5         | 1.00  | 21/21    | PASS       | bb580e9 (2026-10-14T07:48:50Z by andrzejnovak) |
 <!-- /leaderboard -->
