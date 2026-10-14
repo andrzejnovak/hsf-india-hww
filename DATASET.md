@@ -28,27 +28,21 @@ and `mc/pool.npz`:
 | `jet_pt_0`, `jet_eta_0`, `jet_phi_0`, `jet_pt_1`, `jet_eta_1`, `jet_phi_1` | float32 | the two leading jets, zero when absent |
 
 Leptons can be taken as massless. The simulation is the ATLAS Open Data release for 13 TeV, reduced to this
-table for the HSF-India machine-learning tutorial; the same events are in that tutorial's file.
+table for the HSF-India machine-learning tutorial; the same events are in that tutorial's file. `hww.py`
+computes the usual derived quantities (dilepton mass, transverse mass, dilepton pT, opening angle).
 
 ## The pool (`mc/pool.npz`)
 
 Three further columns: `label` (1 for signal, 0 for background), `process` (the simulated process, see
 `pool_meta.json`), and `weight`. The weights are normalised so that **the sum of weights of a process is the number
-of its events expected in the data** at the dataset's luminosity (`pool_meta.json`: `lumi_fb`, 300 fb⁻¹) for the
+of its events expected in the data** at the dataset's luminosity (`pool_meta.json`: `lumi_fb`, 1000 fb⁻¹) for the
 nominal rate: at signal strength μ = 1 for the signal, at the nominal normalisation for the background. The
 signal is a Higgs boson of mass 125 GeV decaying to two W bosons and then two leptons and two neutrinos
 (gluon fusion and vector-boson fusion production); the background is the continuum production of two W
 bosons (and ZZ) decaying to two leptons and two neutrinos.
 
-## How a signal of another mass is made
-
-The simulation exists at 125 GeV only. A signal of mass m is defined, for this task, as the 125 GeV sample
-with **every lepton transverse momentum and the missing transverse energy multiplied by m / 125**, angles and
-jets unchanged. The data were made with this rule; `hww.py` (`morph`) implements it, and templates built with it
-are exact. The number of signal events expected at μ = 1 does not depend on the mass.
-
 ## The public dataset
 
-`datasets/public/seed_000` has a Higgs of mass **125 GeV** at **μ = 1** and the background at its **nominal
-normalisation** (`truth.json`). The sealed datasets have their own planted mass, signal strength and background
-normalisation, see `PROMPT.md`; they are not published.
+`datasets/public/seed_000` has the signal at **μ = 1** and the background at its **nominal normalisation**
+(`truth.json`). The sealed datasets have their own planted signal strength and background normalisation, see
+`PROMPT.md`; they are not published. The Higgs mass is 125 GeV in every dataset.
