@@ -50,7 +50,7 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 08:48 UTC: every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment, on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
+_Sealed run of 2026-10-15 09:00 UTC: every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment, on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
 
 | # | team          | score | sensitivity | robustness | σ μ   | pull width μ | slope μ | submitted                                         |
 |---|---------------|-------|-------------|------------|-------|--------------|---------|---------------------------------------------------|
