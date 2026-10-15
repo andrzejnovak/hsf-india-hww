@@ -395,6 +395,7 @@ MARK = ("<!-- leaderboard -->", "<!-- /leaderboard -->")
 MASS_PAGE = None               # "LEADERBOARD_MASS.md" published a second table, mu and the mass on every dataset, when
                                # make_suite drew moving-mass datasets (fixed_mass_fraction below 1); the mass is not scored now
 REFERENCE = "baseline-mt"      # the template fit: score 100
+HIDDEN = {"thursday-demo"}     # the organisers' demos: on the issue as examples, never scored or shown (unless named with --team)
 FORMAT = 3                     # the cache entry's layout; bump it when the aggregates gain a field the tables need (3: the typical miss)
 
 
@@ -715,6 +716,9 @@ def main():
     if a.stage == "publish":
         return stage_publish(a, out, log)
     latest, subs = teams_from_file(Path(a.teams)) if a.teams else teams_from_issue(a.issue, notify=a.notify, log=log)
+    hide = HIDDEN - set(a.team or ())
+    latest = {t: e for t, e in latest.items() if t not in hide}
+    subs = {k: e for k, e in subs.items() if e["team"] not in hide}
     if a.team:
         missing = sorted(set(a.team) - set(latest))
         if missing:
