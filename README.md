@@ -44,10 +44,12 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 04:53 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline. A submission gets at most 40 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 05:02 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline. A submission gets at most 40 minutes per run; the datasets left when they run out count as not run._
 
-| # | team        | level μ | level mass | slope μ | pull width μ | slope mass | pull width mass | false disc. | self-check | submitted                                      |
-|---|-------------|---------|------------|---------|--------------|------------|-----------------|-------------|------------|------------------------------------------------|
-| 1 | baseline-mt | 2       | 2          | 1.04    | 0.92         | 0.97       | 1.17            | 0/3         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
-| 2 | baseline-nn | 2       | 2          | 0.99    | 0.89         | 0.98       | 1.48            | 0/3         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
+| # | team          | level μ | level mass | slope μ | pull width μ | slope mass | pull width mass | false disc. | self-check | submitted                                      |
+|---|---------------|---------|------------|---------|--------------|------------|-----------------|-------------|------------|------------------------------------------------|
+| 1 | thursday-demo | 2       | 1          | 1.01    | 0.93         | 1.05       | 2.80            | 0/3         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak) |
+| 2 | Horizon       | 2       | 1          | 1.03    | 0.90         | 1.15       | 1.55            | 0/3         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)  |
+| 3 | baseline-mt   | 2       | 1          | 1.03    | 0.90         | 1.15       | 1.55            | 0/3         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
+| 4 | baseline-nn   | 2       | 1          | 1.04    | 0.84         | 1.11       | 1.95            | 0/3         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
 <!-- /leaderboard -->
