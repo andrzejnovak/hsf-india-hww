@@ -50,26 +50,28 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 07:12 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 07:21 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
 
-| # | team          | level | slope μ | pull width μ | false disc. | self-check | submitted                                        |
-|---|---------------|-------|---------|--------------|-------------|------------|--------------------------------------------------|
-| 1 | thursday-demo | 2     | 1.07    | 1.12         | 0/2         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)   |
-| 2 | Horizon       | 2     | 1.05    | 1.15         | 0/2         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)    |
-| 3 | Pilots        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953) |
-| 4 | baseline-mt   | 2     | 1.05    | 1.15         | 0/2         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)   |
-| 5 | baseline-nn   | 2     | 1.06    | 1.14         | 0/2         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)   |
+| # | team          | level | slope μ | pull width μ | false disc. | self-check | submitted                                         |
+|---|---------------|-------|---------|--------------|-------------|------------|---------------------------------------------------|
+| 1 | thursday-demo | 2     | 1.07    | 1.12         | 0/2         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
+| 2 | baseline-mt   | 2     | 1.05    | 1.15         | 0/2         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
+| 3 | Horizon       | 2     | 1.05    | 1.15         | 0/2         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
+| 4 | Pilots        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953)  |
+| 5 | team_x        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31) |
+| 6 | baseline-nn   | 2     | 1.06    | 1.14         | 0/2         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
 
 <details>
 <summary><b>With the mass</b>: μ and the mass on every dataset, the mass moving</summary>
 
-| # | team          | level μ | level mass | slope μ | pull width μ | slope mass | pull width mass | false disc. | self-check | submitted                                        |
-|---|---------------|---------|------------|---------|--------------|------------|-----------------|-------------|------------|--------------------------------------------------|
-| 1 | thursday-demo | 2       | 2          | 1.04    | 0.98         | 0.94       | 1.02            | 0/10        | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)   |
-| 2 | Horizon       | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)    |
-| 3 | Pilots        | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953) |
-| 4 | baseline-mt   | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)   |
-| 5 | baseline-nn   | 2       | 2          | 1.02    | 1.20         | 0.98       | 1.37            | 0/10        | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)   |
+| # | team          | level μ | level mass | slope μ | pull width μ | slope mass | pull width mass | false disc. | self-check | submitted                                         |
+|---|---------------|---------|------------|---------|--------------|------------|-----------------|-------------|------------|---------------------------------------------------|
+| 1 | thursday-demo | 2       | 2          | 1.04    | 0.98         | 0.94       | 1.02            | 0/10        | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
+| 2 | Horizon       | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
+| 3 | Pilots        | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953)  |
+| 4 | team_x        | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31) |
+| 5 | baseline-mt   | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
+| 6 | baseline-nn   | 2       | 2          | 1.02    | 1.20         | 0.98       | 1.37            | 0/10        | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
 
 </details>
 
@@ -80,6 +82,10 @@ _Sealed run of 2026-10-15 07:12 UTC: 31 datasets nobody has seen, every submissi
 
 ![thursday-demo](results/thursday-demo.png)
 
+**baseline-mt** (level 2)
+
+![baseline-mt](results/baseline-mt.png)
+
 **Horizon** (level 2)
 
 ![Horizon](results/Horizon.png)
@@ -88,9 +94,9 @@ _Sealed run of 2026-10-15 07:12 UTC: 31 datasets nobody has seen, every submissi
 
 ![Pilots](results/Pilots.png)
 
-**baseline-mt** (level 2)
+**team_x** (level 2)
 
-![baseline-mt](results/baseline-mt.png)
+![team_x](results/team_x.png)
 
 **baseline-nn** (level 2)
 
