@@ -1,13 +1,16 @@
-# The sealed run of the hackathon, on a throwaway machine: every comment on the submissions issue (issue 1)
-# scores every submission on the sealed suite and commits the leaderboard table into README.md. With the
-# SEALED_SEED repository secret (Settings > Secrets and variables > Actions; any long random string, e.g.
+# The sealed run of the hackathon, on throwaway machines: every comment on the submissions issue (issue 1)
+# scores every submission on the sealed suite and commits the leaderboard table into README.md. Three jobs:
+# plan reads the issue (and replies to a comment with a URL in it but no `<team>: <url> @ <commit>` line, which
+# would otherwise be skipped in silence) and decides who needs a run; score runs once per such team, each on a
+# runner of its own, building the same suite from the secret and scoring that team alone; publish gathers the
+# runners' results with the cache for everyone else and commits the tables and the plots.
+# With the SEALED_SEED repository secret (Settings > Secrets and variables > Actions; any long random string, e.g.
 # python3 -c 'import secrets; print(secrets.token_hex(16))') the suite is the same every run, so results are
 # comparable and a team whose commit was scored before is read from results/cache instead of re-run; without it
 # the suite is fresh each run and nothing is cached. Every run publishes each team's recovery plot under the tables
 # (they show the planted values of the suite; "Run workflow" with plots: false leaves them out) and a cached team
-# keeps its plot from before; fresh: true ignores the cache for the final run. A comment with a URL in it but no `<team>: <url> @ <commit>`
-# line (a team name with a space, say) gets a reply saying so instead of being skipped in silence. The runtime a
-# submission gets is numpy, scipy and the CPU build of torch (EVAL_CONTRACT.md: inference, the model trained beforehand).
+# keeps its plot from before; fresh: true ignores the cache for the final run. The runtime a submission gets is
+# numpy, scipy and the CPU build of torch (EVAL_CONTRACT.md: inference, the model trained beforehand).
 name: sealed run
 
 on:
@@ -38,11 +41,56 @@ permissions:
   contents: write
   issues: write      # the reply to a comment that carries no submission line
 
+env:
+  N: ${{ github.event.inputs.n || '31' }}
+  FRESH: ${{ github.event.inputs.fresh == 'true' && '--fresh' || '' }}
+  SEED_ARG: ${{ github.event.inputs.seed != '' && format('--seed {0}', github.event.inputs.seed) || '' }}
+
 jobs:
-  score:
+  plan:
     if: github.event_name == 'workflow_dispatch' || github.event.issue.number == 1
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 10
+    outputs:
+      todo: ${{ steps.plan.outputs.todo }}
+      any: ${{ steps.plan.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --quiet numpy scipy
+      - name: the submissions, and who needs a run
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # the issue API call and the replies; dropped by sealed_run.py right after
+          SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the cache key; dropped the same way
+        run: |
+          python organiser/sealed_run.py --stage plan --plan-out /tmp/plan.json --publish README.md --notify --n "$N" $FRESH $SEED_ARG
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          todo = json.load(open("/tmp/plan.json"))["todo"]
+          print("todo=" + json.dumps(todo))
+          print("any=" + ("true" if todo else "false"))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan
+          path: /tmp/plan.json
+          retention-days: 3
+
+  score:
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        team: ${{ fromJSON(needs.plan.outputs.todo) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 100   # the suite, the self-check (two runs of the public dataset) and the 60-minute budget
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,16 +102,56 @@ jobs:
       - run: |
           python -m pip install --quiet numpy scipy matplotlib
           python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu   # the CPU build, alone on its index: what a submission may import
-      - name: score every submission on a sealed suite
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: /tmp
+      - name: score ${{ matrix.team }} on this runner
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # read by sealed_run.py for the issue API call and dropped before any submission runs
-          SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the fixed suite's secret; dropped from the environment the same way
+          SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the same suite as every other runner; dropped before the submission runs
         run: |
-          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 3600 --notify \
-            --n "${{ github.event.inputs.n || '31' }}" \
-            ${{ github.event.inputs.plots != 'false' && '--plots' || '' }} \
-            ${{ github.event.inputs.fresh == 'true' && '--fresh' || '' }} \
-            ${{ github.event.inputs.seed != '' && format('--seed {0}', github.event.inputs.seed) || '' }}
+          python organiser/sealed_run.py --stage score --plan /tmp/plan.json --team "${{ matrix.team }}" --out /tmp/sealed --as nobody \
+            --team-budget 3600 --n "$N" $SEED_ARG
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: result-${{ matrix.team }}
+          path: |
+            /tmp/sealed/results/${{ matrix.team }}
+            /tmp/sealed/cache/${{ matrix.team }}.json
+          if-no-files-found: ignore
+          retention-days: 3
+
+  publish:
+    needs: [plan, score]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --quiet numpy scipy
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: /tmp
+      - uses: actions/download-artifact@v4
+        if: needs.plan.outputs.any == 'true'
+        with:
+          pattern: result-*
+          path: /tmp/sealed
+          merge-multiple: true
+      - name: the leaderboard
+        env:
+          SEALED_SEED: ${{ secrets.SEALED_SEED }}
+        run: |
+          python organiser/sealed_run.py --stage publish --plan /tmp/plan.json --out /tmp/sealed --publish README.md --team-budget 3600 --n "$N" \
+            ${{ github.event.inputs.plots != 'false' && '--plots' || '' }} $FRESH $SEED_ARG
       - name: commit the leaderboard
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

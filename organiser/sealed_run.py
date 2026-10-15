@@ -44,6 +44,12 @@ dataset gets a mass level by the same rule (1: slope >= 0.8; 2: and width within
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
 Order: the main table by the mu level, then the distance |slope - 1| + |ln width| on mu, smallest first; the
 folded table by its mu level, the mass level, then that distance.
+CI runs it in three stages, one team per runner: --stage plan reads the issue, replies where needed and writes
+--plan-out, the submissions and which of them need a run (the rest are in the cache); --stage score, once per
+team of the plan on a runner of its own, builds the same suite from the secret and scores that --team into
+<out>/results/<team>/ and <out>/cache/<team>.json (the runner's artifact); --stage publish gathers every runner's
+<out> with the cache for the rest and writes the leaderboard (a team whose runner did not finish is level 0).
+Without --stage everything happens here, --jobs teams at a time: the way to run it by hand.
 Each sbh check run takes two runs of the submission and the scoring --n runs: budget about 2 minutes per team
 with a pipeline like examples/template_fit, 15 with examples/tutorial_nn.
 
@@ -105,14 +111,23 @@ def cached(cache: Path, team: str, entry, n: int, key: str):
     return None
 
 
-def remember(cache: Path, e, n: int, key: str):
-    """Cache what the leaderboard needs: aggregates and verdicts, never rows (they carry the planted truths)."""
-    if cache is None or key is None:
+def remember(cache: Path, e, n: int, key: str, force: bool = False):
+    """Cache what the leaderboard needs: aggregates and verdicts, never rows (they carry the planted truths).
+    Without a key nothing is remembered unless force (a runner's result for the publish stage)."""
+    if cache is None or (key is None and not force):
         return
     cache.mkdir(parents=True, exist_ok=True)
     keep = {k: v for k, v in e.items() if k not in ("rows",)}
     keep.update(n=n, key=key)
     (cache / f"{e['team']}.json").write_text(json.dumps(keep, indent=1, default=str))
+
+
+def not_run(team, entry, why):
+    """A level-0 entry for a team that produced no result: not fetched, or its runner did not finish. Never cached
+    (fetched: False), so the next run tries again."""
+    return {"team": team, "check_ok": False, "submitted": f"{entry['commit'][:7]} ({entry['submitted']})", "level": 0,
+            "distance": float("inf"), "main": S.aggregate([], S.mass_fixed, S.POIS), "full": S.aggregate([]), "rows": [],
+            "url": entry["url"], "commit": entry["commit"], "fetched": False, "note": why}
 
 
 def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key):
@@ -131,9 +146,7 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
     if sub is None:
         (res / "check.txt").write_text("not fetched\n")
         log("level 0 (not fetched)")
-        return {"team": team, "check_ok": False, "submitted": submitted, "level": 0, "distance": float("inf"),
-                "main": S.aggregate([], S.mass_fixed, S.POIS), "full": S.aggregate([]), "rows": [],
-                "url": entry["url"], "commit": entry["commit"]}, lines
+        return not_run(team, entry, "not fetched"), lines
     if a.no_check:
         check_ok, note = False, "skipped (--no-check)"
     else:
@@ -402,6 +415,77 @@ def leaderboard(entries, path_md: Path, path_json: Path, log):
     log(f"\nwritten: {path_md}, {path_json}; per team: {path_md.parent}/<team>/recovery.png, score.txt, check.txt")
 
 
+def resolve_seed(a, log):
+    seed, key = secret_seed()
+    if a.seed is not None:
+        seed, key = a.seed, None          # a seed given by hand: no cache, it is not secret enough
+    log("suite: " + ("the fixed sealed suite (SEALED_SEED)" if key else "made up for this run" if seed is None else "the seed given by hand"))
+    return seed, key
+
+
+def repo_cache(a, key, log):
+    """The cache directory: --cache, or results/cache beside the README; None without either."""
+    cache = Path(a.cache).resolve() if a.cache else (Path(a.publish).resolve().parent / "results" / "cache" if a.publish else None)
+    if cache is not None and key is None:
+        log("no SEALED_SEED: nothing is cached, every team is scored")
+    return cache
+
+
+def stage_plan(a, teams, key, log):
+    """CI: the submissions and which of them need a run on a runner of their own; the rest come from the cache
+    at publish. Written to --plan-out for the other stages."""
+    if not a.plan_out:
+        raise SystemExit("--stage plan needs --plan-out")
+    cache = repo_cache(a, key, log)
+    todo = [t for t, e in teams.items() if a.fresh or cached(cache, t, e, a.n, key) is None]
+    Path(a.plan_out).write_text(json.dumps({"teams": teams, "todo": todo, "n": a.n}, indent=1))
+    log(f"plan: {len(todo)} of {len(teams)} to score ({', '.join(todo) or 'none'}), the rest from the cache; written to {a.plan_out}")
+
+
+def stage_score(a, out: Path, log):
+    """CI: one team of the plan on this runner, with its own copy of the suite: the result goes to
+    <out>/results/<team>/ and <out>/cache/<team>.json, the runner's artifact for the publish stage."""
+    plan = json.loads(Path(a.plan).read_text())
+    if not a.team or len(a.team) != 1 or a.team[0] not in plan["teams"]:
+        raise SystemExit("--stage score takes one --team of the plan")
+    team = a.team[0]; entry = plan["teams"][team]
+    seed, key = resolve_seed(a, log)
+    suite, truths = build_suite(out, seed, a.n, log)
+    (out / "results").mkdir(exist_ok=True)
+    e, lines = score_team(team, entry, a, out, suite, truths, None, key)   # no cache here: the plan decided
+    log("\n" + "\n".join(lines))
+    remember(out / "cache", e, a.n, key, force=True)
+
+
+def stage_publish(a, out: Path, log):
+    """CI: the leaderboard from every runner's result gathered under <out> (results/<team>/, cache/<team>.json),
+    the cache for the teams that were not re-run, and level 0 for a team whose runner did not finish."""
+    plan = json.loads(Path(a.plan).read_text()); teams = plan["teams"]
+    seed, key = resolve_seed(a, log)
+    cache = repo_cache(a, key, log)
+    results = out / "results"; results.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for team, entry in teams.items():
+        f = out / "cache" / f"{team}.json"
+        fresh = json.loads(f.read_text()) if f.is_file() else None
+        if fresh is not None and fresh.get("commit") == entry["commit"]:
+            e, where = fresh, "scored on its own runner"
+            if cache is not None and key is not None and e.get("fetched", True):
+                cache.mkdir(parents=True, exist_ok=True); shutil.copy(f, cache / f"{team}.json")
+        else:
+            c = None if a.fresh else cached(cache, team, entry, a.n, key)
+            if c is not None:
+                e, where = c, f"from the cache, scored at {c.get('scored_at')}"
+            else:
+                e = not_run(team, entry, "its runner did not finish: timed out, or failed"); where = "no result"
+        e["rows"] = []
+        entries.append(e)
+        log(f"=== {team}\n{where}: level {e['level']}" + (f" ({e['note']})" if e.get("note") else ""))
+    leaderboard(entries, results / "leaderboard.md", results / "leaderboard.json", log)
+    if a.publish:
+        publish(entries, Path(a.publish).resolve(), results, a.plots, log, budget=a.team_budget)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, help="the secret master seed; default: made up for this run and never printed")
@@ -409,20 +493,27 @@ def main():
     ap.add_argument("--issue", type=int, default=1, help=f"the submissions issue of {ISSUE_REPO} (default 1)")
     ap.add_argument("--teams", help="read the `<team>: <url> @ <commit>` lines from this file instead of the issue")
     ap.add_argument("--out", default="~/hack-sealed", help="private working directory: suite, truths, submissions, results (default ~/hack-sealed)")
-    ap.add_argument("--team", action="append", help="only these teams (repeatable)")
+    ap.add_argument("--team", action="append", help="only these teams (repeatable); --stage score: the one team")
     ap.add_argument("--as", dest="as_user", metavar="USER", help="run the submissions as this user through sudo -n (CI: nobody)")
     ap.add_argument("--publish", metavar="README", help="write the leaderboard between the markers of this README")
     ap.add_argument("--plots", action="store_true", help="with --publish: each team's recovery plot too, folded under the tables (they show the planted values)")
     ap.add_argument("--fresh", action="store_true", help="ignore the cache: score every team again (the final run)")
     ap.add_argument("--no-check", action="store_true", help="skip the self-check (its verdict then reads FAIL)")
     ap.add_argument("--timeout", type=float, default=600, help="seconds per dataset, the contract's 600")
-    ap.add_argument("--team-budget", type=float, help="seconds a submission gets for the whole suite (CI: 2400); the rest counts as not run")
-    ap.add_argument("--jobs", type=int, default=1, help="teams scored at the same time (CI: 2)")
+    ap.add_argument("--team-budget", type=float, help="seconds a submission gets for the whole suite (CI: 3600); the rest counts as not run")
+    ap.add_argument("--jobs", type=int, default=1, help="teams scored at the same time, without --stage")
     ap.add_argument("--notify", action="store_true", help="reply on the issue to a comment with a URL but no submission line (CI; GITHUB_TOKEN with issues: write)")
     ap.add_argument("--cache", metavar="DIR", help="reuse a team's result when its commit was scored on this suite before (default with --publish: <README dir>/results/cache; needs SEALED_SEED)")
+    ap.add_argument("--stage", choices=["plan", "score", "publish"], help="CI, one team per runner: plan (who needs a run, to --plan-out), score (one --team of --plan on this runner), publish (every runner's --out, the cache for the rest)")
+    ap.add_argument("--plan", metavar="JSON", help="score, publish: the plan the plan stage wrote")
+    ap.add_argument("--plan-out", metavar="JSON", help="plan: where to write it")
     a = ap.parse_args()
     out = Path(a.out).expanduser().resolve()
     log = print
+    if a.stage == "score":
+        return stage_score(a, out, log)
+    if a.stage == "publish":
+        return stage_publish(a, out, log)
     teams = teams_from_file(Path(a.teams)) if a.teams else teams_from_issue(a.issue, notify=a.notify, log=log)
     if a.team:
         missing = sorted(set(a.team) - set(teams))
@@ -432,15 +523,12 @@ def main():
     if not teams:
         raise SystemExit("no submissions: no `<team>: <url> @ <commit>` line " + (f"in {a.teams}" if a.teams else f"on issue {a.issue}"))
     log("submissions: " + ", ".join(f"{t} ({e['url']} @ {e['commit'][:7]})" for t, e in teams.items()))
-    seed, key = secret_seed()
-    if a.seed is not None:
-        seed, key = a.seed, None          # a seed given by hand: no cache, it is not secret enough
-    log("suite: " + ("the fixed sealed suite (SEALED_SEED)" if key else "made up for this run" if seed is None else "the seed given by hand"))
+    seed, key = resolve_seed(a, log)
+    if a.stage == "plan":
+        return stage_plan(a, teams, key, log)
     suite, truths = build_suite(out, seed, a.n, log)
     results = out / "results"; results.mkdir(exist_ok=True)
-    cache = Path(a.cache).resolve() if a.cache else (Path(a.publish).resolve().parent / "results" / "cache" if a.publish else None)
-    if cache is not None and key is None:
-        log("no SEALED_SEED: nothing is cached, every team is scored")
+    cache = repo_cache(a, key, log)
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=max(1, a.jobs)) as pool:
         futures = {team: pool.submit(score_team, team, entry, a, out, suite, truths, cache, key) for team, entry in teams.items()}
