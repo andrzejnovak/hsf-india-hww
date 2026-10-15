@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        team: ${{ fromJSON(needs.plan.outputs.todo) }}
+        sub: ${{ fromJSON(needs.plan.outputs.todo) }}   # <team>@<commit>, every submission not in the cache
     runs-on: ubuntu-latest
     timeout-minutes: 100   # the suite, the self-check (two runs of the public dataset) and the 60-minute budget
     steps:
@@ -107,19 +107,19 @@ jobs:
         with:
           name: plan
           path: /tmp
-      - name: score ${{ matrix.team }} on this runner
+      - name: score ${{ matrix.sub }} on this runner
         env:
           SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the same suite as every other runner; dropped before the submission runs
         run: |
-          python organiser/sealed_run.py --stage score --plan /tmp/plan.json --team "${{ matrix.team }}" --out /tmp/sealed --as nobody \
-            --publish README.md --team-budget 3600 --n "$N" $SEED_ARG   # --publish only locates results/cache: the template fit's error bars, for the plot
+          python organiser/sealed_run.py --stage score --plan /tmp/plan.json --sub "${{ matrix.sub }}" --out /tmp/sealed --as nobody \
+            --team-budget 3600 --n "$N" $SEED_ARG
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: result-${{ matrix.team }}
+          name: result-${{ matrix.sub }}
           path: |
-            /tmp/sealed/results/${{ matrix.team }}
-            /tmp/sealed/cache/${{ matrix.team }}.json
+            /tmp/sealed/results/${{ matrix.sub }}
+            /tmp/sealed/cache
           if-no-files-found: ignore
           retention-days: 3
 

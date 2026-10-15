@@ -110,6 +110,8 @@ mass you report (optional in RESULT.json) is for the record, not scored.
   miss / σ, and is 1 when they match. Honesty is the pull width or its inverse, whichever is below 1: error bars
   20 % too small or 20 % too big both give about 0.8.
 - The template fit, `baseline-mt`, has precision 1.00 by definition, so its score is 100 × its honesty.
+- The table is each team's latest submission; every earlier one is in the collapsed table under it, scored the
+  same way. Team names link to the repository, hashes to the code of that commit.
 
 Each team's plot is folded under the table: honesty on top, each dataset coloured by its pull, and precision
 below, each miss against the template fit's typical miss. Yours, on datasets you make:
