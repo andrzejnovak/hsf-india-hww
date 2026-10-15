@@ -40,7 +40,8 @@ with a few parameters, and a small neural network.
    than the template fit (μ ± 0.16 against ± 0.14, the mass ± 7.3 GeV against ± 5.3): a score trained to tell
    signal from background at 125 GeV compresses away the shape information the mass lives in. `examples/nn_fit`
    is one step past it, ten physics features instead of six raw ones (± 0.14, ± 5.9 GeV), still not past the
-   template fit: the room is real. The level is
+   template fit: the room is real (`examples/torch_nn` is the same network trained with PyTorch, exported to the
+   same JSON). The level is
    reached when the error bars on μ are honest on the sealed datasets (pulls of width ≈ 1) and nothing is
    claimed on the empty ones; the optional `mH` of the contract, reported on every dataset, gets its own level
    by the same rule, scored independently of μ. Better features, a classifier that keeps the mass information, a
@@ -198,7 +199,8 @@ prints both levels on your own suites.
 ## Rules
 
 - numpy + scipy at run time; no other packages, no network, ≤ 600 s per dataset, no data files inside
-  `submission/` (a model as text is fine).
+  `submission/` (a model as text is fine). Train with what you like, scikit-learn or PyTorch, and export the
+  weights as JSON for a numpy forward pass: `examples/torch_nn` is `examples/nn_fit` trained with PyTorch.
 - `run.sh` must be deterministic (fix your random seeds) and read only `<dataset_dir>` and its own folder.
 - Nothing from the public truth (125 GeV, μ = 1, nominal background) may be hard-coded: the sealed datasets
   differ in all three.
