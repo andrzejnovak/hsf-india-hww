@@ -1,0 +1,70 @@
+{
+ "team": "team_x",
+ "check_ok": true,
+ "note": null,
+ "main": {
+  "n": 51,
+  "n_ok": 51,
+  "recovery": 1.0,
+  "selection": "the datasets whose mass stays at 125 GeV",
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
+  "pois": {
+   "mu": {
+    "slope": 1.022430571498763,
+    "bias": 0.3508856777598419,
+    "width": 0.9234722019147495,
+    "verdict": "OK",
+    "miss": 0.13138239199099266,
+    "err": 0.1346494709801889,
+    "err_cal": 0.1346494709801889
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 31,
+  "power": 0.9393939393939394
+ },
+ "full": {
+  "n": 51,
+  "n_ok": 51,
+  "recovery": 1.0,
+  "selection": "every dataset",
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
+  "pois": {
+   "mu": {
+    "slope": 1.022430571498763,
+    "bias": 0.3508856777598419,
+    "width": 0.9234722019147495,
+    "verdict": "OK",
+    "miss": 0.13138239199099266,
+    "err": 0.1346494709801889,
+    "err_cal": 0.1346494709801889
+   },
+   "mH": {
+    "slope": 0.5455375180576326,
+    "bias": -0.5083974157001457,
+    "width": 2.2840963371422416,
+    "verdict": "UNDER-covering: error bars too small",
+    "miss": 2.158816533383072,
+    "err": 1.4936282908341365,
+    "err_cal": 3.411590908146278
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 31,
+  "power": 0.9393939393939394
+ },
+ "level": 2,
+ "distance": 0.10204515209079981,
+ "url": "https://github.com/gauriaggarwal31/hsf-india-hww-team_x.git",
+ "commit": "46fac17",
+ "scored_at": "2026-10-15T10:57:56Z",
+ "n": 51,
+ "key": "43259f915cc7",
+ "fmt": 3
+}
