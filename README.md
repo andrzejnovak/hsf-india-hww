@@ -50,20 +50,24 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 09:13 UTC: every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment, on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
+_Sealed run of 2026-10-15 09:19 UTC: every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment, on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
 
 | # | team          | score | precision | honesty | typical miss μ | σ μ   | pull width μ | submitted                                         |
 |---|---------------|-------|-----------|---------|----------------|-------|--------------|---------------------------------------------------|
-| 1 | thursday-demo | 110   | 1.23      | 0.90    | 0.122          | 0.130 | 0.90         | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
-| 2 | Hack-404      | 109   | 1.24      | 0.88    | 0.121          | 0.129 | 0.88         | 0909838 (2026-10-15T07:18:42Z by shaurya-cd)      |
-| 3 | team_x        | 100   | 1.04      | 0.96    | 0.144          | 0.145 | 0.96         | f9c4b95 (2026-10-15T08:24:44Z by gauriaggarwal31) |
-| 4 | baseline-mt   | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
-| 5 | Horizon       | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
+| 1 | Horizon       | 111   | 1.26      | 0.88    | 0.119          | 0.125 | 0.88         | 458fcb0 (2026-10-15T09:05:05Z by AnushSingla)     |
+| 2 | thursday-demo | 110   | 1.23      | 0.90    | 0.122          | 0.130 | 0.90         | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
+| 3 | Hack-404      | 109   | 1.24      | 0.88    | 0.121          | 0.129 | 0.88         | 0909838 (2026-10-15T07:18:42Z by shaurya-cd)      |
+| 4 | team_x        | 103   | 1.04      | 0.99    | 0.144          | 0.138 | 1.01         | d1f83a7 (2026-10-15T09:07:43Z by gauriaggarwal31) |
+| 5 | baseline-mt   | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
 | 6 | Pilots        | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | 69e717a (2026-10-15T08:29:02Z by ishandhull2953)  |
 | 7 | baseline-nn   | 78    | 0.84      | 0.94    | 0.179          | 0.154 | 1.07         | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
 
 <details>
 <summary><b>Recovery plots</b>, per team: honesty on top, each dataset coloured by its pull; precision below, each miss against the template fit's typical miss</summary>
+
+**Horizon** (score 111)
+
+![Horizon](results/Horizon.png)
 
 **thursday-demo** (score 110)
 
@@ -73,17 +77,13 @@ _Sealed run of 2026-10-15 09:13 UTC: every submission on the [issue](https://git
 
 ![Hack-404](results/Hack-404.png)
 
-**team_x** (score 100)
+**team_x** (score 103)
 
 ![team_x](results/team_x.png)
 
 **baseline-mt** (score 98)
 
 ![baseline-mt](results/baseline-mt.png)
-
-**Horizon** (score 98)
-
-![Horizon](results/Horizon.png)
 
 **Pilots** (score 98)
 
