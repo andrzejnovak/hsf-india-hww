@@ -11,7 +11,8 @@ classifier goes, the physics in pictures, debugging, what gets scored, the rules
 
 ## Setup
 
-Anywhere with git and Python 3 (numpy and scipy; `pip install numpy scipy matplotlib scikit-learn` if missing).
+Anywhere with git and Python 3 (numpy and scipy, and the CPU build of PyTorch for a network evaluated with torch:
+`pip install numpy scipy matplotlib scikit-learn` and `pip install torch --index-url https://download.pytorch.org/whl/cpu` if missing).
 The data is simulated and all of it is in this repository.
 
 ```bash
@@ -21,11 +22,13 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: the task files, the
 ```
 
 The second line must end with `determinism (second clean run): PASS`. Your pipeline is `~/hack-<team-name>/submission/`:
-a `run.sh <dataset_dir> <output_dir>` that writes `<output_dir>/RESULT.json`, Python 3 with numpy and scipy only.
+a `run.sh <dataset_dir> <output_dir>` that writes `<output_dir>/RESULT.json`, Python 3 with numpy, scipy and torch (CPU, for
+inference) at run time.
 `examples/template_fit/` is a working start (a fit of the transverse and dilepton masses for the Higgs mass, the
 signal strength and the background rate; the leaderboard's `baseline-mt`); `examples/tutorial_nn/` plugs the ML
 tutorial's network into the same fit (`baseline-nn`), `examples/nn_fit/` does the same with better features, and
-`examples/torch_nn/` trains that network with PyTorch instead (the pipeline stays numpy: the weights travel as JSON).
+`examples/torch_nn/` trains that network with PyTorch and evaluates it either way, with numpy from `model.json` or with torch
+from the state_dict as JSON (`fit_torch.py`).
 The self-check with `--submission ~/hack-<team-name>/submission` tells you whether yours runs.
 
 ## Submit

@@ -4,11 +4,13 @@
     python3 train.py [datasets/public/seed_000/mc/pool.npz] [--out model.json]
 
 The same 10-feature multilayer perceptron as examples/nn_fit (two hidden layers of 32 and 16, ReLU), trained
-with PyTorch instead of scikit-learn and written to model.json in the same layout: the feature list, the
-standardisation, the weight matrices. fit.py is examples/nn_fit's, unchanged: it evaluates the network with
-numpy alone, as the contract requires (no torch at run time, no binary files in the submission). torch is
-imported inside main(), so fit.py's `from train import features` needs numpy only. Training takes a few
-minutes on a laptop CPU: `pip install torch --index-url https://download.pytorch.org/whl/cpu`.
+with PyTorch instead of scikit-learn and written two ways: model.json in nn_fit's layout (the feature list,
+the standardisation, the weight matrices), which fit.py, examples/nn_fit's unchanged, evaluates with numpy
+alone; and model_state.json, the state_dict as JSON lists, which fit_torch.py loads back into the same
+nn.Module and evaluates with torch at run time, the route for a model whose forward pass you would rather
+not rewrite by hand. No binary model files in a submission either way. torch is imported inside main(), so
+fit.py's `from train import features` needs numpy only. Training takes a few minutes on a laptop CPU:
+`pip install torch --index-url https://download.pytorch.org/whl/cpu`.
 """
 import argparse
 import json
@@ -95,6 +97,11 @@ def main():
              "layers": [{"W": m.weight.detach().numpy().T.tolist(), "b": m.bias.detach().numpy().tolist()} for m in linears]}
     Path(a.out).write_text(json.dumps(model))
     print(f"wrote {a.out} ({Path(a.out).stat().st_size / 1e3:.0f} kB)")
+    state = {"features": FEATURES, "mean": mean.tolist(), "std": std.tolist(),
+             "state_dict": {k: v.detach().numpy().tolist() for k, v in net.state_dict().items()}}
+    out_state = Path(a.out).with_name("model_state.json")
+    out_state.write_text(json.dumps(state))
+    print(f"wrote {out_state} ({out_state.stat().st_size / 1e3:.0f} kB): the state_dict as JSON, for fit_torch.py")
 
 
 if __name__ == "__main__":

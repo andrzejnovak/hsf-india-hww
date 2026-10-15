@@ -19,8 +19,9 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
+MODEL_SUFFIXES = {".pt", ".pth", ".ckpt", ".safetensors", ".onnx"}   # a model travels as text: the state_dict as JSON
 FORBIDDEN_SUFFIXES = {".npy", ".npz", ".root", ".parquet", ".h5", ".hdf5", ".pkl",
-                      ".pickle", ".feather", ".arrow"}
+                      ".pickle", ".feather", ".arrow"} | MODEL_SUFFIXES
 FORBIDDEN_NAMES = {"RESULT.json", "truth.json", "manifest.json", "suite_truth.json"}
 EXCLUDE_DIRS = {".git", "__pycache__", ".pixi", ".venv", "venv", "node_modules",
                 ".ipynb_checkpoints", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
@@ -151,7 +152,8 @@ def hygiene(submission: Path, files: List[Path], forbidden_names=()) -> List[str
         if p.suffix.lower() in FORBIDDEN_SUFFIXES and not (
                 vendored and len(relp.parts) > 1
                 and is_base_runtime_copy(p, Path(*relp.parts[1:]), size, bases)):
-            v.append(f"data-like file committed: {rel}")
+            v.append(f"binary model file committed: {rel} (dump the state_dict as JSON lists; examples/torch_nn/train.py)"
+                     if p.suffix.lower() in MODEL_SUFFIXES else f"data-like file committed: {rel}")
         if p.name in forbidden or "truth" in p.name.lower():
             v.append(f"forbidden file name: {rel}")
         if size > MAX_FILE_MB * 1e6 and not vendored:

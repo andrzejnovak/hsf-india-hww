@@ -59,13 +59,14 @@ datasets without a Higgs.
 ## The loop
 
 1. **Build** `~/hack-<team>/submission/`: a `run.sh <dataset_dir> <output_dir>` that writes `<output_dir>/RESULT.json`
-   (format in EVAL_CONTRACT.md §2). Python 3 with **numpy and scipy only** at run time. Start from
+   (format in EVAL_CONTRACT.md §2). Python 3 with **numpy, scipy and torch** (the CPU build, for inference) at run time. Start from
    `examples/template_fit/` (copy `fit.py`, `hww.py`, `run.sh`) or `examples/tutorial_nn/` (plus `train.py`
    and `model.json`; `examples/nn_fit/` is the same with better features).
 2. **With the agent:** `cd ~/hack-<team> && opencode`, then paste:
    > Read PROMPT.md, DATASET.md and EVAL_CONTRACT.md in this folder. Build the submission in `submission/`:
    > a `run.sh <dataset_dir> <output_dir>` that writes `<output_dir>/RESULT.json`. The public dataset is
-   > `datasets/public/seed_000`. Python 3 with numpy and scipy only at run time. Do not hard-code the public
+   > `datasets/public/seed_000`. Python 3 with numpy, scipy and torch (CPU, inference only: train beforehand and ship
+   > the weights as JSON) at run time. Do not hard-code the public
    > dataset's answer.
 3. **Self-check** (hygiene, the contract, determinism), from the kit folder:
    ```bash
@@ -200,9 +201,11 @@ folded table, scored independently of μ (0 when it is not reported); that table
 
 ## Rules
 
-- numpy + scipy at run time; no other packages, no network, ≤ 600 s per dataset, no data files inside
-  `submission/` (a model as text is fine). Train with what you like, scikit-learn or PyTorch, and export the
-  weights as JSON for a numpy forward pass: `examples/torch_nn` is `examples/nn_fit` trained with PyTorch.
+- numpy, scipy and torch (the CPU build) at run time; no other packages, no network, ≤ 600 s per dataset, no
+  data files and no binary model files inside `submission/` (a model as text is fine: a `state_dict` dumped as
+  JSON lists loads back with `load_state_dict`; `.pt` files are refused). Train beforehand, with what you like:
+  a model trained inside `run.sh` eats the 600 s and is hard to make deterministic. `examples/torch_nn` is
+  `examples/nn_fit` trained with PyTorch, evaluated with numpy (`fit.py`) or with torch (`fit_torch.py`).
 - `run.sh` must be deterministic (fix your random seeds) and read only `<dataset_dir>` and its own folder.
 - Nothing from the public truth (125 GeV, μ = 1, nominal background) may be hard-coded: the sealed datasets
   differ in all three (half of them keep the mass within 2 GeV of 125, for the main table; the rest

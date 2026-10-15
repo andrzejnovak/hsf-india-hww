@@ -22,12 +22,15 @@ snapshot and executes, from a clean unpack, for every sealed dataset:
 
 Hygiene, checked before freezing: no data files (`.npy`, `.npz`, `.root`,
 `.parquet`, …), no committed outputs or truth files, no symlinks, ≤ 5 MB per
-file, ≤ 50 MB total.  A trained model travels as text (JSON weights, a few
-hundred kB at most), with the code that evaluates it.
+file, ≤ 50 MB total.  A trained model travels as text (JSON weights: a numpy
+layout or a torch `state_dict` as lists, within the 5 MB per file), with the
+code that evaluates it; `.pt`, `.pth`, `.ckpt`, `.safetensors` and `.onnx`
+files are refused.
 A `pylib/` directory of vendored packages is exempt from the two size caps
 (own budget 4 GB); the data-file and truth-name rules apply inside it too.
 
-Runtime: Python 3 with `numpy` and `scipy` importable, nothing else; no
+Runtime: Python 3 with `numpy`, `scipy` and `torch` (the CPU build) importable,
+nothing else; torch is for inference, the model trained beforehand; no
 network; the pipeline may read only `<dataset_dir>` and its own directory.
 Limits per dataset: 600 s wall clock, 6 GB memory.
 

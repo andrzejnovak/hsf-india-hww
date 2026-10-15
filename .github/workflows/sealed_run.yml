@@ -4,7 +4,8 @@
 # python3 -c 'import secrets; print(secrets.token_hex(16))') the suite is the same every run, so results are
 # comparable and a team whose commit was scored before is read from results/cache instead of re-run; without it
 # the suite is fresh each run and nothing is cached. A comment with a URL in it but no `<team>: <url> @ <commit>`
-# line (a team name with a space, say) gets a reply saying so instead of being skipped in silence. Run it by
+# line (a team name with a space, say) gets a reply saying so instead of being skipped in silence. The runtime a
+# submission gets is numpy, scipy and the CPU build of torch (EVAL_CONTRACT.md: inference, the model trained beforehand). Run it by
 # hand ("Run workflow") with plots: true after the deadline for the final table with recovery plots (that run
 # re-scores everyone).
 name: sealed run
@@ -37,7 +38,7 @@ jobs:
   score:
     if: github.event_name == 'workflow_dispatch' || github.event.issue.number == 1
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,13 +47,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install --quiet numpy scipy matplotlib
+      - run: |
+          python -m pip install --quiet numpy scipy matplotlib
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu   # the CPU build, alone on its index: what a submission may import
       - name: score every submission on a sealed suite
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # read by sealed_run.py for the issue API call and dropped before any submission runs
           SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the fixed suite's secret; dropped from the environment the same way
         run: |
-          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 2400 --notify \
+          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 3600 --notify \
             --n "${{ github.event.inputs.n || '31' }}" \
             ${{ github.event.inputs.plots == 'true' && '--plots' || '' }} \
             ${{ github.event.inputs.seed != '' && format('--seed {0}', github.event.inputs.seed) || '' }}

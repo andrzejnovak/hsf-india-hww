@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The sealed run, with the kit alone, anywhere with git, python3, numpy and scipy: build a sealed suite from a
+"""The sealed run, with the kit alone, anywhere with git, python3, numpy, scipy and torch (CPU): build a sealed suite from a
 secret seed, clone every submitted team repository at its submitted commit, run them all, write the leaderboard.
 
     python3 organiser/sealed_run.py [--seed <secret>] [--n 21] [--out ~/hack-sealed] [--issue 1 | --teams FILE]
