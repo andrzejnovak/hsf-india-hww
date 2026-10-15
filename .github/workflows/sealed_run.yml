@@ -3,11 +3,11 @@
 # SEALED_SEED repository secret (Settings > Secrets and variables > Actions; any long random string, e.g.
 # python3 -c 'import secrets; print(secrets.token_hex(16))') the suite is the same every run, so results are
 # comparable and a team whose commit was scored before is read from results/cache instead of re-run; without it
-# the suite is fresh each run and nothing is cached. A comment with a URL in it but no `<team>: <url> @ <commit>`
+# the suite is fresh each run and nothing is cached. Every run publishes each team's recovery plot under the tables
+# (they show the planted values of the suite; "Run workflow" with plots: false leaves them out) and a cached team
+# keeps its plot from before; fresh: true ignores the cache for the final run. A comment with a URL in it but no `<team>: <url> @ <commit>`
 # line (a team name with a space, say) gets a reply saying so instead of being skipped in silence. The runtime a
-# submission gets is numpy, scipy and the CPU build of torch (EVAL_CONTRACT.md: inference, the model trained beforehand). Run it by
-# hand ("Run workflow") with plots: true after the deadline for the final table with recovery plots (that run
-# re-scores everyone).
+# submission gets is numpy, scipy and the CPU build of torch (EVAL_CONTRACT.md: inference, the model trained beforehand).
 name: sealed run
 
 on:
@@ -19,7 +19,11 @@ on:
         description: "datasets in the sealed suite (public seed_000 included; half of the drawn ones keep the mass at 125)"
         default: "31"
       plots:
-        description: "publish the recovery plots too (after the deadline only, they show the planted values)"
+        description: "publish each team's recovery plot too (they show the planted values of the sealed datasets)"
+        type: boolean
+        default: true
+      fresh:
+        description: "ignore the cache: score every submission again (the final run)"
         type: boolean
         default: false
       seed:
@@ -57,7 +61,8 @@ jobs:
         run: |
           python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 3600 --notify \
             --n "${{ github.event.inputs.n || '31' }}" \
-            ${{ github.event.inputs.plots == 'true' && '--plots' || '' }} \
+            ${{ github.event.inputs.plots != 'false' && '--plots' || '' }} \
+            ${{ github.event.inputs.fresh == 'true' && '--fresh' || '' }} \
             ${{ github.event.inputs.seed != '' && format('--seed {0}', github.event.inputs.seed) || '' }}
       - name: commit the leaderboard
         env:

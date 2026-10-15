@@ -11,8 +11,9 @@ self-contained (CI: .github/workflows/sealed_run.yml runs it on every comment on
 commits the table into the README). With --as USER the submissions run as that user through sudo -n, with the
 truths unreadable to it (<out> is 711, <out>/truths 700) and a scrubbed environment. --publish writes the
 leaderboard table between the `<!-- leaderboard -->` markers of that README; --plots also copies each team's
-recovery plot beside it (results/<team>.png) and links it: the plots show the planted values per dataset, so
-publish them only once the deadline has passed.
+recovery plot beside it (results/<team>.png) and links it in a folded block, a cached team keeping the plot
+published before. The plots show the planted values per dataset of a suite that stays the same: publish them
+with that in mind (CI does, every run). --fresh ignores the cache and scores everyone again: the final run.
 
 Submissions are the comments on the submissions issue (--issue, default 1 of andrzejnovak/hsf-india-hww,
 read through the public GitHub API with no token), one line each: `<team>: <git url> @ <commit>`; the last
@@ -121,7 +122,7 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
     log(f"=== {team}")
     res = out / "results" / team; res.mkdir(parents=True, exist_ok=True)
     submitted = f"{entry['commit'][:7]} ({entry['submitted']})"
-    c = None if a.plots else cached(cache, team, entry, a.n, key)
+    c = None if a.fresh else cached(cache, team, entry, a.n, key)
     if c is not None:
         c["rows"] = []
         log(f"cached: this commit was scored on this suite at {c.get('scored_at')}: level {c['level']}")
@@ -332,17 +333,23 @@ def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None)
     body = [f"_Sealed run of {when}: {n} datasets nobody has seen, every submission on the "
             f"[issue](https://github.com/{ISSUE_REPO}/issues/1) at its last comment. The table scores μ on the {k} datasets "
             f"whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all {n}, the mass moving between 100 and 150 GeV. "
-            + ("Recovery plots: reported against planted, per team." if plots else "Recovery plots follow after the deadline.")
+            + ("Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom." if plots else "Recovery plots follow after the deadline.")
             + (f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else "") + "_", "",
             table_main(entries), "", "<details>", "<summary><b>With the mass</b>: μ and the mass on every dataset, the mass moving</summary>", "",
             table_full(entries), "", "</details>"]
     if plots:
         pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
-        for e in entries:
-            src = results / e["team"] / "recovery.png"
+        shown = []
+        for e in sorted(entries, key=lambda e: (-e["level"], e["distance"], e["team"])):
+            src, dst = results / e["team"] / "recovery.png", pdir / f"{e['team']}.png"
             if src.is_file():
-                shutil.copy(src, pdir / f"{e['team']}.png")
-                body += ["", f"**{e['team']}** (level {e['level']})", "", f"![{e['team']}](results/{e['team']}.png)"]
+                shutil.copy(src, dst)               # scored this run: a new plot
+            elif not dst.is_file():
+                continue                            # not fetched, or cached without a plot from before
+            shown += ["", f"**{e['team']}** (level {e['level']})", "", f"![{e['team']}](results/{e['team']}.png)"]
+        if shown:
+            body += ["", "<details>", "<summary><b>Recovery plots</b>, per team: reported against planted on the sealed datasets, "
+                     "each point coloured by how far it sits from the truth in units of its own error bar</summary>"] + shown + ["", "</details>"]
     head, tail = text.split(MARK[0], 1)[0], text.split(MARK[1], 1)[1]
     readme.write_text(head + MARK[0] + "\n" + "\n".join(body) + "\n" + MARK[1] + tail)
     log(f"published into {readme}" + (f" with plots under {readme.parent / 'results'}" if plots else ""))
@@ -405,7 +412,8 @@ def main():
     ap.add_argument("--team", action="append", help="only these teams (repeatable)")
     ap.add_argument("--as", dest="as_user", metavar="USER", help="run the submissions as this user through sudo -n (CI: nobody)")
     ap.add_argument("--publish", metavar="README", help="write the leaderboard between the markers of this README")
-    ap.add_argument("--plots", action="store_true", help="with --publish: the recovery plots too (after the deadline only)")
+    ap.add_argument("--plots", action="store_true", help="with --publish: each team's recovery plot too, folded under the tables (they show the planted values)")
+    ap.add_argument("--fresh", action="store_true", help="ignore the cache: score every team again (the final run)")
     ap.add_argument("--no-check", action="store_true", help="skip the self-check (its verdict then reads FAIL)")
     ap.add_argument("--timeout", type=float, default=600, help="seconds per dataset, the contract's 600")
     ap.add_argument("--team-budget", type=float, help="seconds a submission gets for the whole suite (CI: 2400); the rest counts as not run")

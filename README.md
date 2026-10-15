@@ -116,5 +116,7 @@ python3 make_suite.py suites/mine --n 10 --seed 7
 python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png
 ```
 
-The sealed run's per-team recovery plots show the planted values of the sealed datasets, so they go up here
-after the deadline.
+Each team's recovery plot on the sealed datasets themselves is folded under the tables after every run. It shows
+the planted values of the sealed suite, the same suite every run: use it to see where your score is lost, not to
+fit a correction to it; a correction tuned to those points is a hard-coded answer, against the rules and plain to
+see in your code.
