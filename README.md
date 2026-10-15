@@ -47,14 +47,26 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 05:58 UTC: 21 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. Recovery plots follow after the deadline. A submission gets at most 40 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 06:34 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Recovery plots follow after the deadline. A submission gets at most 40 minutes per run; the datasets left when they run out count as not run._
+
+| # | team          | level | slope μ | pull width μ | false disc. | self-check | submitted                                      |
+|---|---------------|-------|---------|--------------|-------------|------------|------------------------------------------------|
+| 1 | thursday-demo | 2     | 1.07    | 1.12         | 0/2         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak) |
+| 2 | Horizon       | 2     | 1.05    | 1.15         | 0/2         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)  |
+| 3 | baseline-mt   | 2     | 1.05    | 1.15         | 0/2         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
+| 4 | baseline-nn   | 2     | 1.06    | 1.14         | 0/2         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
+
+<details>
+<summary><b>With the mass</b>: μ and the mass on every dataset, the mass moving</summary>
 
 | # | team          | level μ | level mass | slope μ | pull width μ | slope mass | pull width mass | false disc. | self-check | submitted                                      |
 |---|---------------|---------|------------|---------|--------------|------------|-----------------|-------------|------------|------------------------------------------------|
-| 1 | thursday-demo | 2       | 2          | 1.06    | 1.14         | 0.97       | 1.21            | 0/4         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak) |
-| 2 | baseline-nn   | 2       | 2          | 1.02    | 1.37         | 1.01       | 1.46            | 0/4         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
-| 3 | Horizon       | 2       | 1          | 1.03    | 1.34         | 0.97       | 1.57            | 0/4         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)  |
-| 4 | baseline-mt   | 2       | 1          | 1.03    | 1.34         | 0.97       | 1.57            | 0/4         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
+| 1 | thursday-demo | 2       | 2          | 1.04    | 0.98         | 0.94       | 1.02            | 0/10        | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak) |
+| 2 | Horizon       | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)  |
+| 3 | baseline-mt   | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
+| 4 | baseline-nn   | 2       | 2          | 1.02    | 1.20         | 0.98       | 1.37            | 0/10        | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak) |
+
+</details>
 <!-- /leaderboard -->
 
 ### Reading the tables
