@@ -55,3 +55,44 @@ _Sealed run of 2026-10-15 05:58 UTC: 21 datasets nobody has seen, every submissi
 | 3 | Horizon       | 2       | 1          | 1.03    | 1.34         | 0.97       | 1.57            | 0/4         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)  |
 | 4 | baseline-mt   | 2       | 1          | 1.03    | 1.34         | 0.97       | 1.57            | 0/4         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak) |
 <!-- /leaderboard -->
+
+### Reading the table
+
+One row per team, its last submitted commit, run on the same sealed datasets every time (a fixed suite, so runs
+are comparable). Each dataset has its own planted Higgs mass, signal strength μ and background rate; what is
+scored is whether the μ you report follows the planted μ across the datasets, with error bars that mean what
+they say, and the same for the mass if you report it. The two plots below show exactly that for the three
+example pipelines on 30 datasets of their own (`make_plots.py`); yours look the same with `score_suite.py`, see
+the end.
+
+- **level μ**, the score. **0**, no measurement: the self-check fails, fewer than 90 % of the datasets run, or
+  the slope is below 0.8 (the stub reports a constant: slope 0). **1**, follows the truth: slope ≥ 0.8. **2**,
+  and honest: pull width within [0.5, 1.5] and no discovery claimed on a dataset without a Higgs. **3** is
+  judged when you present: how the agent got there.
+- **level mass**: the same rule for the optional `mH`; 0 when it is not reported on every dataset. Rows are
+  ordered by level μ, then level mass, then how close the μ slope is to 1 and the μ pull width to 1.
+- **slope**: a line fitted through reported against planted (the recovery plot below). 1 means your
+  measurement moves one-for-one with the truth; 0 that you report the same value whatever was planted.
+- **pull width**: the spread of (reported − planted) / your error bar across the datasets (the pulls plot
+  below). 1 means your error bars are honest; above 1.5 they are too small, below 0.5 too large, and both fail
+  level 2.
+- **false disc.**: datasets without a Higgs on which you claimed a discovery, out of all such datasets; any
+  fails level 2.
+- **self-check**: hygiene, the contract and determinism on the public dataset, the check `submit.sh` runs;
+  FAIL is level 0.
+- **submitted**: the commit that ran, and when and by whom it was posted.
+
+![reported against planted: the three example pipelines on 30 datasets](figs/recovery.png)
+
+![the pulls of the same run: (reported − planted) / error, against a width-1 Gaussian](figs/pulls.png)
+
+Your own plots, on datasets you make (the sealed ones are drawn from the same priors, with a seed you don't
+have):
+
+```bash
+python3 make_suite.py suites/mine --n 10 --seed 7
+python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png
+```
+
+The sealed run's per-team recovery plots show the planted values of the sealed datasets, so they go up here
+after the deadline.
