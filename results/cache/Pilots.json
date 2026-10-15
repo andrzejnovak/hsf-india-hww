@@ -1,0 +1,60 @@
+{
+ "team": "Pilots",
+ "check_ok": true,
+ "submitted": "3be629b (2026-10-15T06:57:34Z by ishandhull2953)",
+ "main": {
+  "n": 31,
+  "n_ok": 31,
+  "recovery": 1.0,
+  "selection": "the datasets whose mass stays at 125 GeV",
+  "n_picked": 16,
+  "n_strong": 13,
+  "n_null": 2,
+  "pois": {
+   "mu": {
+    "slope": 1.052028957806766,
+    "bias": 0.48133770730283254,
+    "width": 1.149304729568628,
+    "verdict": "OK"
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 13,
+  "power": 1.0
+ },
+ "full": {
+  "n": 31,
+  "n_ok": 31,
+  "recovery": 1.0,
+  "selection": "every dataset",
+  "n_picked": 31,
+  "n_strong": 20,
+  "n_null": 10,
+  "pois": {
+   "mu": {
+    "slope": 1.0204897031522657,
+    "bias": 0.37506905959078213,
+    "width": 1.065567006208257,
+    "verdict": "OK"
+   },
+   "mH": {
+    "slope": 0.9546202215748265,
+    "bias": -0.14704429707160607,
+    "width": 1.3905165435593327,
+    "verdict": "OK"
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 20,
+  "power": 1.0
+ },
+ "level": 2,
+ "distance": 0.191186134364135,
+ "url": "https://github.com/ishandhull2953/hww-hackathon.git",
+ "commit": "3be629b",
+ "scored_at": "2026-10-15T07:12:03Z",
+ "n": 31,
+ "key": "5029bdffb576"
+}
