@@ -50,30 +50,35 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 10:58 UTC: each team's latest submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1), on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
+_Sealed run of 2026-10-15 11:22 UTC: each team's latest submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1), on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
 
 | # | team                                                              | score | precision | honesty | typical miss μ | σ μ   | pull width μ | submitted                                                                                                           |
 |---|-------------------------------------------------------------------|-------|-----------|---------|----------------|-------|--------------|---------------------------------------------------------------------------------------------------------------------|
-| 1 | [Horizon](https://github.com/AnushSingla/horizon-hsf-workshop)    | 111   | 1.26      | 0.88    | 0.119          | 0.125 | 0.88         | [458fcb0](https://github.com/AnushSingla/horizon-hsf-workshop/tree/458fcb0ae83d) 2026-10-15 09:05 by AnushSingla    |
-| 2 | [Hack-404](https://github.com/shaurya-cd/Hack-404)                | 109   | 1.24      | 0.88    | 0.121          | 0.129 | 0.88         | [0909838](https://github.com/shaurya-cd/Hack-404/tree/0909838) 2026-10-15 07:18 by shaurya-cd                       |
-| 3 | [Pilot](https://github.com/ishandhull2953/hww-hackathon)          | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69) 2026-10-15 09:37 by ishandhull2953          |
-| 4 | [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69996a9) 2026-10-15 10:31 by ishandhull2953     |
-| 5 | [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 105   | 1.14      | 0.92    | 0.131          | 0.135 | 0.92         | [46fac17](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/46fac17) 2026-10-15 10:53 by gauriaggarwal31 |
+| 1 | [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 119   | 1.28      | 0.93    | 0.117          | 0.121 | 0.93         | [350c714](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/350c714) 2026-10-15 11:12 by gauriaggarwal31 |
+| 2 | [Horizon](https://github.com/AnushSingla/horizon-hsf-workshop)    | 111   | 1.26      | 0.88    | 0.119          | 0.125 | 0.88         | [458fcb0](https://github.com/AnushSingla/horizon-hsf-workshop/tree/458fcb0ae83d) 2026-10-15 09:05 by AnushSingla    |
+| 3 | [Hack-404](https://github.com/shaurya-cd/Hack-404)                | 109   | 1.24      | 0.88    | 0.121          | 0.129 | 0.88         | [0909838](https://github.com/shaurya-cd/Hack-404/tree/0909838) 2026-10-15 07:18 by shaurya-cd                       |
+| 4 | [Pilot](https://github.com/ishandhull2953/hww-hackathon)          | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69) 2026-10-15 09:37 by ishandhull2953          |
+| 5 | [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69996a9) 2026-10-15 10:31 by ishandhull2953     |
 | 6 | [baseline-mt](https://github.com/andrzejnovak/hsf-india-hww)      | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | [52ad132](https://github.com/andrzejnovak/hsf-india-hww/tree/52ad132c99de) 2026-10-14 08:25 by andrzejnovak         |
 | 7 | [baseline-nn](https://github.com/andrzejnovak/hsf-india-hww)      | 78    | 0.84      | 0.94    | 0.179          | 0.154 | 1.07         | [c549c28](https://github.com/andrzejnovak/hsf-india-hww/tree/c549c28882b3) 2026-10-14 08:26 by andrzejnovak         |
 
 <details>
-<summary><b>Earlier submissions</b> (2): by team, newest first, with the score each had</summary>
+<summary><b>Earlier submissions</b> (3): by team, newest first, with the score each had</summary>
 
 | team                                                              | score | precision | honesty | typical miss μ | σ μ   | pull width μ | submitted                                                                                                           |
 |-------------------------------------------------------------------|-------|-----------|---------|----------------|-------|--------------|---------------------------------------------------------------------------------------------------------------------|
-| [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | [69e717a](https://github.com/ishandhull2953/hww-hackathon/tree/69e717a) 2026-10-15 08:29 by ishandhull2953          |
+| [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 105   | 1.14      | 0.92    | 0.131          | 0.135 | 0.92         | [46fac17](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/46fac17) 2026-10-15 10:53 by gauriaggarwal31 |
 | [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 103   | 1.04      | 0.99    | 0.144          | 0.138 | 1.01         | [d1f83a7](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/d1f83a7) 2026-10-15 09:07 by gauriaggarwal31 |
+| [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | [69e717a](https://github.com/ishandhull2953/hww-hackathon/tree/69e717a) 2026-10-15 08:29 by ishandhull2953          |
 
 </details>
 
 <details>
 <summary><b>Recovery plots</b>, per team: honesty on top, each dataset coloured by its pull; precision below, each miss against the template fit's typical miss</summary>
+
+**team_x** (score 119)
+
+![team_x](results/team_x.png)
 
 **Horizon** (score 111)
 
@@ -90,10 +95,6 @@ _Sealed run of 2026-10-15 10:58 UTC: each team's latest submission on the [issue
 **Pilots** (score 108)
 
 ![Pilots](results/Pilots.png)
-
-**team_x** (score 105)
-
-![team_x](results/team_x.png)
 
 **baseline-mt** (score 98)
 
