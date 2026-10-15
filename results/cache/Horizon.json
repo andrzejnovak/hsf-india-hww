@@ -3,58 +3,58 @@
  "check_ok": true,
  "submitted": "d8bc180 (2026-10-15T04:50:58Z by AnushSingla)",
  "main": {
-  "n": 31,
-  "n_ok": 31,
+  "n": 51,
+  "n_ok": 51,
   "recovery": 1.0,
   "selection": "the datasets whose mass stays at 125 GeV",
-  "n_picked": 16,
-  "n_strong": 13,
-  "n_null": 2,
+  "n_picked": 26,
+  "n_strong": 19,
+  "n_null": 6,
   "pois": {
    "mu": {
-    "slope": 1.0520306251395861,
-    "bias": 0.4813441239712951,
-    "width": 1.1493132951327198,
+    "slope": 1.0210030948351272,
+    "bias": 0.37110412217785727,
+    "width": 1.1301813244413639,
     "verdict": "OK"
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 13,
+  "discoveries": 19,
   "power": 1.0
  },
  "full": {
-  "n": 31,
-  "n_ok": 31,
+  "n": 51,
+  "n_ok": 51,
   "recovery": 1.0,
   "selection": "every dataset",
-  "n_picked": 31,
-  "n_strong": 20,
-  "n_null": 10,
+  "n_picked": 51,
+  "n_strong": 31,
+  "n_null": 14,
   "pois": {
    "mu": {
-    "slope": 1.0204908663714092,
-    "bias": 0.375087274117485,
-    "width": 1.0655371868975576,
+    "slope": 1.0450483510665518,
+    "bias": 0.36465660107451053,
+    "width": 1.039495112170885,
     "verdict": "OK"
    },
    "mH": {
-    "slope": 0.9546262023046655,
-    "bias": -0.14701257742717583,
-    "width": 1.3904891276840594,
+    "slope": 0.9008288780739853,
+    "bias": -0.18807443125644555,
+    "width": 1.344813693414598,
     "verdict": "OK"
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 20,
-  "power": 1.0
+  "discoveries": 30,
+  "power": 0.967741935483871
  },
  "level": 2,
- "distance": 0.1911952544916341,
+ "distance": 0.14338117879379025,
  "url": "https://github.com/AnushSingla/horizon-hsf-workshop",
  "commit": "d8bc180963de",
- "scored_at": "2026-10-15T07:14:40Z",
- "n": 31,
+ "scored_at": "2026-10-15T08:15:51Z",
+ "n": 51,
  "key": "5029bdffb576"
 }

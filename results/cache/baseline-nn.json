@@ -3,58 +3,58 @@
  "check_ok": true,
  "submitted": "c549c28 (2026-10-14T08:26:00Z by andrzejnovak)",
  "main": {
-  "n": 31,
-  "n_ok": 31,
+  "n": 51,
+  "n_ok": 51,
   "recovery": 1.0,
   "selection": "the datasets whose mass stays at 125 GeV",
-  "n_picked": 16,
-  "n_strong": 13,
-  "n_null": 2,
+  "n_picked": 26,
+  "n_strong": 19,
+  "n_null": 6,
   "pois": {
    "mu": {
-    "slope": 1.0630515369389633,
-    "bias": 0.47346153241092714,
-    "width": 1.1441148938812442,
+    "slope": 1.0166896172030626,
+    "bias": 0.3864198276461532,
+    "width": 1.2372224834666015,
     "verdict": "OK"
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 13,
+  "discoveries": 19,
   "power": 1.0
  },
  "full": {
-  "n": 31,
-  "n_ok": 31,
+  "n": 51,
+  "n_ok": 51,
   "recovery": 1.0,
   "selection": "every dataset",
-  "n_picked": 31,
-  "n_strong": 20,
-  "n_null": 10,
+  "n_picked": 51,
+  "n_strong": 31,
+  "n_null": 14,
   "pois": {
    "mu": {
-    "slope": 1.0160041355508849,
-    "bias": 0.37532883674019,
-    "width": 1.1965217208595496,
+    "slope": 1.0547980745956809,
+    "bias": 0.2326684904900027,
+    "width": 1.133799497896991,
     "verdict": "OK"
    },
    "mH": {
-    "slope": 0.9777670675092422,
-    "bias": -0.01857397353921588,
-    "width": 1.3655104561349718,
+    "slope": 0.8101311847369175,
+    "bias": -0.14432910270673976,
+    "width": 1.3397409511621103,
     "verdict": "OK"
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 20,
-  "power": 1.0
+  "discoveries": 30,
+  "power": 0.967741935483871
  },
  "level": 2,
- "distance": 0.19768285656801673,
+ "distance": 0.22955855173011805,
  "url": "https://github.com/andrzejnovak/hsf-india-hww",
  "commit": "c549c28882b3",
- "scored_at": "2026-10-15T07:21:38Z",
- "n": 31,
+ "scored_at": "2026-10-15T08:22:46Z",
+ "n": 51,
  "key": "5029bdffb576"
 }
