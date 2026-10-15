@@ -205,34 +205,54 @@ def report(agg, log=print):
 
 
 def plot(rows, path, title=None):
-    """The recovery plot, reported vs planted per POI; returns False without matplotlib."""
+    """The recovery plot, reported against planted per POI, every scored dataset coloured by how far it sits from
+    the truth in units of its own error bar (|pull|: green within one error bar, red at three or more), which is
+    what inflates the pull width and bends the slope. Filled: the datasets the main table scores (mass at 125);
+    hollow: mass moving (the folded table); small grey: weak or null, outside the slope and the pulls. Each panel's
+    title carries the level with the slope and pull width behind it, and the mean error bar: the precision of the
+    analysis, the number to push down once the pulls are honest. Returns False without matplotlib."""
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        from matplotlib.cm import ScalarMappable
+        from matplotlib.colors import Normalize
     except ImportError:
         return False
     ok = [r for r in rows if r["ok"]]
-    names = [p for p in ALL_POIS if any(p in r for r in ok)]
-    fig, axes = plt.subplots(1, len(names), figsize=(4.8 * len(names), 4.2), squeeze=False)
+    names = [p for p in ALL_POIS if any(p in r for r in ok)] or ["mu"]
+    aggs = {"mu": aggregate(rows, mass_fixed, POIS), "mH": aggregate(rows)}
+    where = {"mu": "the fixed-mass datasets", "mH": "every dataset"}
+    cmap, norm = plt.get_cmap("RdYlGn_r"), Normalize(0.0, 3.0)
+    fig, axes = plt.subplots(1, len(names), figsize=(5.8 * len(names), 4.9), squeeze=False, constrained_layout=True)
     for ax, name in zip(axes[0], names):
         unit = UNITS.get(name, "")
         for r in ok:
             if name not in r:
                 continue
-            s = r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
-            ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=4, capsize=2,
-                        color="C0" if s else "0.6", alpha=0.9 if s else 0.6,
-                        mfc=("C0" if mass_fixed(r["truth"]) else "none") if s else "0.6")
+            strong = r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
+            if strong:
+                c = cmap(norm(abs(r[f"pull_{name}"])))
+                ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=5.5, capsize=2, color=c, ecolor=c,
+                            mec=c, mfc=c if mass_fixed(r["truth"]) else "none", mew=1.4, alpha=0.95, zorder=3)
+            else:
+                ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=3.5, capsize=1.5, color="0.65", alpha=0.6, zorder=2)
         lo, hi = ax.get_xlim()
-        ax.plot([lo, hi], [lo, hi], "k--", lw=1, label="reported = planted")
+        ax.plot([lo, hi], [lo, hi], "k--", lw=1, label="reported = planted", zorder=1)
         ax.set_xlim(lo, hi)
         ax.set_xlabel(f"planted {name}{unit}"); ax.set_ylabel(f"reported {name}{unit}")
         ax.legend(loc="upper left", frameon=False)
-    axes[0][0].set_title("blue: scored seeds (Z_exp ≥ 5), grey: weak or null\nfilled: mass at 125 (the main table), hollow: mass moving", fontsize=8)
-    if title:
-        fig.suptitle(title, fontsize=11)
-    fig.tight_layout(); fig.savefig(path, dpi=130); plt.close(fig)
+        a = aggs[name]; p = a["pois"].get(name)
+        sel = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
+               and (name != "mu" or mass_fixed(r["truth"]))]
+        err = f"{np.mean([r[f'{name}_e'] for r in sel]):.2f}{unit.strip(' []')}" if sel else "–"
+        ax.set_title((f"level {level_of(a, name)}: slope {p['slope']:.2f}, pull width {p['width']:.2f}" if p else "no slope: not scored")
+                     + f" on {where[name]}\nmean error bar {err} over {len(sel)} scored datasets", fontsize=9)
+    sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
+    fig.colorbar(sm, ax=axes[0].tolist(), fraction=0.035, pad=0.02, label="|reported − planted| / your error bar")
+    note = "filled: mass at 125 (the main table), hollow: mass moving (the folded table), grey: weak or null, not scored"
+    fig.suptitle((title + "\n" if title else "") + note, fontsize=10 if title else 9)
+    fig.savefig(path, dpi=130); plt.close(fig)
     return True
 
 
