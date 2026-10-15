@@ -43,8 +43,10 @@ between 100 and 150 GeV. Levels, as the pitch defines them (change `level` below
 The mass is optional and scored independently in the folded table: a team that reports mH on every scored
 dataset gets a mass level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when it is not reported.
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
-Order: the main table by the mu level, then the distance |slope - 1| + |ln width| on mu, smallest first; the
-folded table by its mu level, the mass level, then that distance.
+Order: the score, 100 x the template fit's (REFERENCE) calibrated error over the team's, the calibrated error
+being the mean error bar times the pull width above 1 (the mass page averages mu and the mass where reported);
+then the distance |slope - 1| + |ln width| on mu. No self-check pass, no score. The levels below are still computed
+(leaderboard.json, the cache) but no longer shown: the GUIDE's milestones, for the presentations.
 CI runs it in three stages, one team per runner: --stage plan reads the issue, replies where needed and writes
 --plan-out, the submissions and which of them need a run (the rest are in the cache); --stage score, once per
 team of the plan on a runner of its own, builds the same suite from the secret and scores that --team into
@@ -107,7 +109,7 @@ def cached(cache: Path, team: str, entry, n: int, key: str):
         c = json.loads(f.read_text())
     except json.JSONDecodeError:
         return None
-    if c.get("commit") == entry["commit"] and c.get("n") == n and c.get("key") == key and "main" in c and "full" in c:
+    if c.get("commit") == entry["commit"] and c.get("n") == n and c.get("key") == key and c.get("fmt") == FORMAT:
         return c
     return None
 
@@ -119,7 +121,7 @@ def remember(cache: Path, e, n: int, key: str, force: bool = False):
         return
     cache.mkdir(parents=True, exist_ok=True)
     keep = {k: v for k, v in e.items() if k not in ("rows",)}
-    keep.update(n=n, key=key)
+    keep.update(n=n, key=key, fmt=FORMAT)
     (cache / f"{e['team']}.json").write_text(json.dumps(keep, indent=1, default=str))
 
 
@@ -339,6 +341,41 @@ MARK = ("<!-- leaderboard -->", "<!-- /leaderboard -->")
 
 
 MASS_PAGE = "LEADERBOARD_MASS.md"
+REFERENCE = "baseline-mt"      # the template fit: score 100
+FORMAT = 2                     # the cache entry's layout; bump it when the aggregates gain a field the tables need
+
+
+def err_cal(agg, poi):
+    a = agg["pois"].get(poi)
+    v = a and a.get("err_cal")
+    return v if v is not None and math.isfinite(v) and v > 0 else None
+
+
+def score_of(e, ref, which):
+    """The leaderboard's one number: 100 x the reference's calibrated error over the team's, for mu alone (the
+    README, which="main") or averaged over mu and the mass where reported (the mass page, "full"); None without
+    a self-check pass, a reference, or an error bar."""
+    if ref is None or not e.get("check_ok"):
+        return None
+    pois = ["mu"] if which == "main" else ["mu", "mH"]
+    ratios = []
+    for poi in pois:
+        own, base = err_cal(e[which], poi), err_cal(ref[which], poi)
+        if own is not None and base is not None:
+            ratios.append(base / own)
+        elif poi == "mu":
+            return None
+    return 100.0 * sum(ratios) / len(ratios)
+
+
+def with_scores(entries, which):
+    """Each entry's score for a page, as (score, entry), the reference being the REFERENCE team of the run."""
+    ref = next((e for e in entries if e["team"] == REFERENCE and e.get("check_ok")), None)
+    return [(score_of(e, ref, which), e) for e in entries]
+
+
+def order(scored, *keys):
+    return sorted(scored, key=lambda t: (-(t[0] if t[0] is not None else -1.0),) + tuple(k(t[1]) for k in keys) + (t[1]["team"],))
 
 
 def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None):
@@ -352,36 +389,36 @@ def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None)
     budget_note = f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else ""
     pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
     main = [f"_Sealed run of {when}: {n} datasets nobody has seen, every submission on the {issue} at its last comment; "
-            f"μ scored on the {k} of them whose Higgs mass stays at 125 GeV. The same with the mass, on all {n}: "
-            f"[{MASS_PAGE}]({MASS_PAGE})." + (" Each team's plot on those datasets is folded at the bottom." if plots else "") + budget_note + "_",
+            f"μ scored on the {k} of them whose Higgs mass stays at 125 GeV, the score 100 × the template fit's calibrated error bar "
+            f"over yours (see below). The same with the mass, on all {n}: [{MASS_PAGE}]({MASS_PAGE})." + (" Each team's plot on those datasets is folded at the bottom." if plots else "") + budget_note + "_",
             "", table_main(entries)]
     mass = [f"_Sealed run of {when}: μ and the mass on all {n} sealed datasets, the mass moving between 100 and 150 GeV; "
             f"the main table, μ on the {k} fixed-mass datasets, is in the [README](README.md)."
             + (" Each team's plot on every dataset is folded at the bottom." if plots else "") + budget_note + "_",
             "", table_full(entries)]
     if plots:
-        main += plot_block(sorted(entries, key=lambda e: (-e["level"], e["distance"], e["team"])), results, pdir, "recovery_mu.png", "",
+        main += plot_block(order(with_scores(entries, "main"), lambda e: e["distance"]), results, pdir, "recovery_mu.png", "",
                            "reported against planted μ on the fixed-mass datasets, each point coloured by how far it sits from the truth in units of its own error bar",
-                           lambda e: f"level {e['level']}")
-        mass += plot_block(sorted(entries, key=lambda e: (-level(e["full"], e["check_ok"]), -mass_level(e["full"]), distance(e["full"]), e["team"])),
+                           lambda sc, e: f"score {fmt(sc, '{:.0f}')}")
+        mass += plot_block(order(with_scores(entries, "full"), lambda e: distance(e["full"])),
                            results, pdir, "recovery.png", "-mass",
                            "μ and the mass, reported against planted on every sealed dataset, filled points the fixed-mass datasets, hollow the moving ones",
-                           lambda e: f"level μ {level(e['full'], e['check_ok'])}, mass {mass_level(e['full'])}")
+                           lambda sc, e: f"score {fmt(sc, '{:.0f}')}")
     write_page(readme, main, log)
     write_page(readme.parent / MASS_PAGE, mass, log)
 
 
-def plot_block(entries, results: Path, pdir: Path, src_name: str, suffix: str, summary: str, label):
-    """The folded block of per-team plots for one page: a plot made this run is copied into results/, a team
-    without one keeps the plot published before, a team with neither is left out."""
+def plot_block(scored, results: Path, pdir: Path, src_name: str, suffix: str, summary: str, label):
+    """The folded block of per-team plots for one page, in the table's order: a plot made this run is copied into
+    results/, a team without one keeps the plot published before, a team with neither is left out."""
     shown = []
-    for e in entries:
+    for sc, e in scored:
         src, dst = results / e["team"] / src_name, pdir / f"{e['team']}{suffix}.png"
         if src.is_file():
             shutil.copy(src, dst)
         elif not dst.is_file():
             continue
-        shown += ["", f"**{e['team']}** ({label(e)})", "", f"![{e['team']}](results/{dst.name})"]
+        shown += ["", f"**{e['team']}** ({label(sc, e)})", "", f"![{e['team']}](results/{dst.name})"]
     return ["", "<details>", f"<summary><b>Recovery plots</b>, per team: {summary}</summary>"] + shown + ["", "</details>"] if shown else []
 
 
@@ -405,37 +442,35 @@ def fdr(a):
 
 
 def table_main(entries):
-    """The main table: mu on the fixed-mass datasets, by level then distance."""
-    entries.sort(key=lambda e: (-e["level"], e["distance"], e["team"]))
-    head = ["#", "team", "level", "slope μ", "pull width μ", "false disc.", "self-check", "submitted"]
+    """The README's table: mu on the fixed-mass datasets, by score."""
+    head = ["#", "team", "score", "error μ", "slope μ", "pull width μ", "submitted"]
     rows = []
-    for i, e in enumerate(entries, 1):
-        a = e["main"]; mu = a["pois"].get("mu")
-        rows.append([str(i), e["team"], str(e["level"]), fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fdr(a),
-                     "PASS" if e["check_ok"] else "FAIL", e.get("submitted") or "–"])
+    for i, (sc, e) in enumerate(order(with_scores(entries, "main"), lambda e: e["distance"]), 1):
+        mu = e["main"]["pois"].get("mu")
+        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(mu and mu.get("err_cal")), fmt(mu and mu["slope"]),
+                     fmt(mu and mu["width"]), e.get("submitted") or "–"])
     return md_table(head, rows)
 
 
 def table_full(entries):
-    """The folded table: mu and the mass on every dataset, by the mu level, the mass level, then distance."""
-    order = sorted(entries, key=lambda e: (-level(e["full"], e["check_ok"]), -mass_level(e["full"]), distance(e["full"]), e["team"]))
-    head = ["#", "team", "level μ", "level mass", "slope μ", "pull width μ", "slope mass", "pull width mass", "false disc.", "self-check", "submitted"]
+    """The mass page's table: mu and the mass on every dataset, by score."""
+    head = ["#", "team", "score", "error μ", "error mass", "slope μ", "pull width μ", "slope mass", "pull width mass", "submitted"]
     rows = []
-    for i, e in enumerate(order, 1):
+    for i, (sc, e) in enumerate(order(with_scores(entries, "full"), lambda e: distance(e["full"])), 1):
         a = e["full"]; mu, mh = a["pois"].get("mu"), a["pois"].get("mH")
-        rows.append([str(i), e["team"], str(level(a, e["check_ok"])), str(mass_level(a)) if mh else "0",
+        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"),
+                     fmt(mu and mu.get("err_cal")), fmt(mh and mh.get("err_cal"), "{:.1f}"),
                      fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fmt(mh and mh["slope"]), fmt(mh and mh["width"]),
-                     fdr(a), "PASS" if e["check_ok"] else "FAIL", e.get("submitted") or "–"])
+                     e.get("submitted") or "–"])
     return md_table(head, rows)
 
 
 def leaderboard(entries, path_md: Path, path_json: Path, log):
     text = table_main(entries) + "\n\nWith the mass, every dataset:\n\n" + table_full(entries)
     path_md.write_text(f"# Leaderboard\n\n{text}\n\nThe first table scores μ on the datasets whose mass stays at 125 GeV, the second μ and the mass "
-                       f"on every dataset. level 0: no measurement (the self-check, a dataset that did not run, or a slope of μ below 0.8); "
-                       f"1: follows the truth (slope ≥ 0.8); 2: and honest error bars (pull width in [{S.WIDTH_OK[0]}, {S.WIDTH_OK[1]}], no false discovery). "
-                       f"The mass (`mH` in RESULT.json) is optional and scored on its own, by the same rule, when it is reported on every scored dataset. "
-                       f"Order: the level, then the distance; with the mass, the μ level, the mass level, then the distance. Level 3 is judged in the room. The full numbers are in results/.\n")
+                       f"on every dataset. score: 100 x {REFERENCE}'s calibrated error over the team's (the mean error bar times the pull width above 1; "
+                       f"on the second table averaged with the mass where reported); the order. The mass (`mH` in RESULT.json) is optional and counts "
+                       f"when it is reported on every scored dataset. The GUIDE's levels are in leaderboard.json, not on the tables. The full numbers are in results/.\n")
     path_json.write_text(json.dumps([{k: v for k, v in e.items() if k != "rows"} for e in entries], indent=1, default=str))
     log("\n" + text)
     log(f"\nwritten: {path_md}, {path_json}; per team: {path_md.parent}/<team>/recovery.png, score.txt, check.txt")

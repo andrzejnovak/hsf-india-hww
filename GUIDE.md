@@ -181,10 +181,11 @@ python3 explore.py suites/mine/seed_003 --result out/RESULT.json --out seed_003.
 the self-check prints the traceback of a failed run. `seed_000` of any suite is the public truth, so a pipeline that
 is right there and wrong elsewhere has hard-coded something.
 
-## What gets scored: a level
+## What gets scored: the score; the levels are milestones
 
-The leaderboard is levels, from two tests on the sealed datasets (EVAL_CONTRACT.md §3 has the full list of
-aggregates; they are all in the sealed run's `results/`). Its main table scores μ alone, on the sealed datasets
+The leaderboard is one number, the score, explained after the levels. The levels are not scored: they are the
+milestones you report when you present, from two tests on the sealed datasets (EVAL_CONTRACT.md §3 has the full list of aggregates;
+they are all in the sealed run's `results/`). The leaderboard's main table scores μ alone, on the sealed datasets
 whose Higgs mass stays at 125 GeV (within 2 GeV: half of them), so that the mass cannot drag μ along;
 [LEADERBOARD_MASS.md](LEADERBOARD_MASS.md) beside it adds the mass, on every dataset, where the mass moves between
 100 and 150 GeV:
@@ -197,8 +198,12 @@ whose Higgs mass stays at 125 GeV (within 2 GeV: half of them), so that the mass
 - **level 3** is judged when you present: how the agent got there.
 
 The contract's optional `mH`, reported on every scored dataset, gets its own level by the same rule on the mass
-page, scored independently of μ (0 when it is not reported); that table orders by the μ level first.
-`score_suite.py` prints both tables' numbers on your own suites (`make_suite.py` plants the same mix).
+page, scored independently of μ (0 when it is not reported). The tables show no level; they are ordered by one
+number, the **score**: 100 × the template fit's calibrated error bar over yours, the calibrated error bar
+being the mean error bar you quote times your pull width where that is above 1, the error bar you would have
+had to quote to be honest. The template fit scores 100; a tighter honest measurement scores more; shrinking,
+padding, a bias and a wrong slope all cost. `score_suite.py` prints the numbers behind both tables on your own
+suites (`make_suite.py` plants the same mix).
 
 ## Rules
 

@@ -116,26 +116,26 @@ _Sealed run of 2026-10-15 07:29 UTC: 31 datasets nobody has seen, every submissi
 One row per team, its last submitted commit, run on the same sealed datasets every time (a fixed suite, so runs
 are comparable). Each dataset has its own planted signal strength μ and background rate; on half of them the
 Higgs mass stays at 125 GeV (within 2 GeV), on the other half it is anywhere between 100 and 150 GeV. This table
-scores μ on the fixed-mass datasets alone: whether the μ you report follows the planted μ, with error bars that
-mean what they say. The mass is not scored here, so a wrong mass cannot drag μ along; μ and the mass together, on
+scores μ on the fixed-mass datasets alone: how precisely the μ you report follows the planted μ, with error bars
+that mean what they say. The three levels of the [GUIDE](GUIDE.md) are milestones for when you present, not
+columns here. The mass is not scored here, so a wrong mass cannot drag μ along; μ and the mass together, on
 every dataset, is a page of its own, [LEADERBOARD_MASS.md](LEADERBOARD_MASS.md). The two plots below show what is
 measured, for the three example pipelines on 30 datasets of their own (`make_plots.py`); yours look the same with
 `score_suite.py`, see the end.
 
-- **level**, the score. **0**, no measurement: the self-check fails, fewer than 90 % of the datasets run, or
-  the slope is below 0.8 (the stub reports a constant: slope 0). **1**, follows the truth: slope ≥ 0.8. **2**,
-  and honest: pull width within [0.5, 1.5] and no discovery claimed on a dataset without a Higgs. **3** is
-  judged when you present: how the agent got there. Rows are ordered by level, then by how close the slope is
-  to 1 and the pull width to 1.
+- **score**, the one number the table is ordered by: 100 × the template fit's calibrated error on μ over yours.
+  The template fit (`baseline-mt`) scores 100; 115 means your honest error bar is 15 % tighter than its. No
+  self-check pass (hygiene, the contract, determinism on the public dataset: the check `submit.sh` runs), or
+  nothing run, is no score.
+- **error μ**: your calibrated error bar, the mean error bar you quote times the pull width where that is
+  above 1: the error bar you would have had to quote to be honest. A genuinely more precise measurement, its
+  pulls still of width 1, is a smaller calibrated error and a higher score: that is the game. Quoting a smaller
+  error bar than you have gains nothing, the pull width grows by the same factor; padding it costs you directly;
+  a bias or a wrong slope widens the pulls and costs too.
 - **slope**: a line fitted through reported against planted (the recovery plot below). 1 means your
   measurement moves one-for-one with the truth; 0 that you report the same value whatever was planted.
 - **pull width**: the spread of (reported − planted) / your error bar across the datasets (the pulls plot
-  below). 1 means your error bars are honest; above 1.5 they are too small, below 0.5 too large, and both fail
-  level 2.
-- **false disc.**: datasets without a Higgs on which you claimed a discovery, out of all such datasets; any
-  fails level 2.
-- **self-check**: hygiene, the contract and determinism on the public dataset, the check `submit.sh` runs;
-  FAIL is level 0.
+  below). 1 means your error bars are honest; above it they are too small, below it too large.
 - **submitted**: the commit that ran, and when and by whom it was posted.
 
 ![reported against planted: the three example pipelines on 30 datasets](figs/recovery.png)

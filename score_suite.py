@@ -164,7 +164,10 @@ def aggregate(rows, pick=None, pois=ALL_POIS, selection="every dataset"):
         width = float(np.sqrt(np.mean(pulls ** 2)))
         verdict = ("OK" if WIDTH_OK[0] <= width <= WIDTH_OK[1] else
                    ("UNDER-covering: error bars too small" if width > WIDTH_OK[1] else "OVER-covering: error bars too large"))
-        agg["pois"][name] = {"slope": slope, "bias": float(pulls.mean()), "width": width, "verdict": verdict}
+        err = float(np.mean([r[f"{name}_e"] for r in have]))              # the mean error bar quoted
+        err_cal = err * max(1.0, width) if math.isfinite(width) else float("nan")   # what it would have to be to be honest
+        agg["pois"][name] = {"slope": slope, "bias": float(pulls.mean()), "width": width, "verdict": verdict,
+                             "err": err, "err_cal": err_cal}
     agg["false_discoveries"] = sum(r["disc"] for r in null)
     agg["fdr"] = agg["false_discoveries"] / len(null) if null else None
     agg["discoveries"] = sum(r["disc"] for r in strong)
@@ -196,6 +199,7 @@ def report(agg, log=print):
             continue
         log(f"  {name}: sensitivity slope {a['slope']:5.2f} (1 = faithful, 0 = constant) | bias (mean pull) {a['bias']:+5.2f} "
             f"| calibration (pull RMS) {a['width']:4.2f} -> {a['verdict']}")
+        log(f"  {name}: mean error bar {a['err']:.3g}, calibrated {a['err_cal']:.3g} (times the pull width above 1: the leaderboard's precision)")
     if agg["fdr"] is not None:
         log(f"  false-discovery rate: {agg['fdr']:.2f} ({agg['false_discoveries']} of {agg['n_null']} null seeds claimed)")
     log(f"  level: {level_of(agg)} on mu" + (f", {level_of(agg, 'mH')} on the mass (optional)" if agg["pois"].get("mH") else
@@ -247,9 +251,10 @@ def plot(rows, path, title=None, which="full"):
         ax.legend(loc="upper left", frameon=False)
         p = agg["pois"].get(name)
         sel = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
-        err = f"{np.mean([r[f'{name}_e'] for r in sel]):.2f}{unit.strip(' []')}" if sel else "–"
+        u = unit.strip(" []")
         ax.set_title((f"level {level_of(agg, name)}: slope {p['slope']:.2f}, pull width {p['width']:.2f}" if p else "no slope: not scored")
-                     + f" on {where}\nmean error bar {err} over {len(sel)} scored datasets", fontsize=9)
+                     + f" on {where}\n" + (f"mean error bar {p['err']:.2f}{u}, calibrated {p['err_cal']:.2f}{u}" if p else "no error bar")
+                     + f" over {len(sel)} scored datasets", fontsize=9)
     sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
     fig.colorbar(sm, ax=axes[0].tolist(), fraction=0.035, pad=0.02, label="|reported − planted| / your error bar")
     note = ("the datasets the README's table scores: mass at 125 GeV; grey: weak or null, not scored" if main else
