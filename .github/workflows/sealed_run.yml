@@ -3,8 +3,10 @@
 # SEALED_SEED repository secret (Settings > Secrets and variables > Actions; any long random string, e.g.
 # python3 -c 'import secrets; print(secrets.token_hex(16))') the suite is the same every run, so results are
 # comparable and a team whose commit was scored before is read from results/cache instead of re-run; without it
-# the suite is fresh each run and nothing is cached. Run it by hand ("Run workflow") with plots: true after the
-# deadline for the final table with recovery plots (that run re-scores everyone).
+# the suite is fresh each run and nothing is cached. A comment with a URL in it but no `<team>: <url> @ <commit>`
+# line (a team name with a space, say) gets a reply saying so instead of being skipped in silence. Run it by
+# hand ("Run workflow") with plots: true after the deadline for the final table with recovery plots (that run
+# re-scores everyone).
 name: sealed run
 
 on:
@@ -29,6 +31,7 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write      # the reply to a comment that carries no submission line
 
 jobs:
   score:
@@ -49,7 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # read by sealed_run.py for the issue API call and dropped before any submission runs
           SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the fixed suite's secret; dropped from the environment the same way
         run: |
-          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 2400 \
+          python organiser/sealed_run.py --out /tmp/sealed --as nobody --publish README.md --jobs 2 --team-budget 2400 --notify \
             --n "${{ github.event.inputs.n || '21' }}" \
             ${{ github.event.inputs.plots == 'true' && '--plots' || '' }} \
             ${{ github.event.inputs.seed != '' && format('--seed {0}', github.event.inputs.seed) || '' }}

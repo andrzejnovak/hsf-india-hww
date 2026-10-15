@@ -16,8 +16,9 @@ publish them only once the deadline has passed.
 
 Submissions are the comments on the submissions issue (--issue, default 1 of andrzejnovak/hsf-india-hww,
 read through the public GitHub API with no token), one line each: `<team>: <git url> @ <commit>`; the last
-comment per team wins. --teams FILE reads the same lines from a file instead (a hand-made list, or the issue
-copied over). Each repository is cloned into <out>/submissions/<team>/ and checked out at that commit; the
+comment per team wins. --notify (CI) replies to a comment with a URL in it but no such line, which is otherwise
+skipped in silence (a team name with a space, say). --teams FILE reads the same lines from a file instead (a
+hand-made list, or the issue copied over). Each repository is cloned into <out>/submissions/<team>/ and checked out at that commit; the
 submission is its submission/ directory (or its root when run.sh is there).
 
 The suite goes under --out: seed_000 is the public truth and the rest are drawn from the task's priors. The truths are moved out of the dataset directories into <out>/truths/ before anything
@@ -57,6 +58,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -188,25 +190,67 @@ def parse_lines(texts):
     return teams
 
 
-def teams_from_issue(number: int):
+def teams_from_issue(number: int, notify: bool = False, log=print):
     """The comments of the submissions issue through the GitHub API. GITHUB_TOKEN, when set (the Actions job's
     own token), authenticates the call: anonymous calls share a small rate limit with every other runner. The
-    variable is removed from the environment right away, before any submission runs."""
+    variable is removed from the environment right away, before any submission runs. With notify (CI), a
+    comment with a URL in it but no submission line gets a reply saying so (reply_unparsed)."""
     token = os.environ.pop("GITHUB_TOKEN", None)
     url = f"https://api.github.com/repos/{ISSUE_REPO}/issues/{number}/comments?per_page=100"
-    texts, page = [], 1
+    comments, page = [], 1
     while True:
-        headers = {"Accept": "application/vnd.github+json", "User-Agent": "hsf-india-hackathon"}
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        req = urllib.request.Request(url + f"&page={page}", headers=headers)
+        req = urllib.request.Request(url + f"&page={page}", headers=api_headers(token))
         with urllib.request.urlopen(req, timeout=30) as r:
-            comments = json.loads(r.read().decode())
-        texts += [(c["body"], f"{c.get('created_at', '')} by {c.get('user', {}).get('login', '?')}") for c in comments]
-        if len(comments) < 100:
+            batch = json.loads(r.read().decode())
+        comments += batch
+        if len(batch) < 100:
             break
         page += 1
-    return parse_lines(texts)
+    if notify:
+        reply_unparsed(number, comments, token, log)
+    return parse_lines([(c["body"], f"{c.get('created_at', '')} by {c.get('user', {}).get('login', '?')}") for c in comments])
+
+
+def api_headers(token):
+    h = {"Accept": "application/vnd.github+json", "User-Agent": "hsf-india-hackathon"}
+    if token:
+        h["Authorization"] = f"Bearer {token}"
+    return h
+
+
+REPLY_TAG = "<!-- sealed-run:"                                   # on every comment the sealed run posts itself
+REPLY_MARK = REPLY_TAG + " no submission line in comment {} -->"
+HOW = ("this comment has no submission line in it, so nothing was run for it. The line is "
+       "`<team>: <git url> @ <commit>` on a line of its own, the team name letters, digits, `-` and `_` only "
+       "(no spaces), e.g. `red-team: https://github.com/alice/hack-red @ 1a2b3c4d5e6f`. Post it as a new "
+       "comment; `bash submit.sh <team> <git url>` from the kit folder writes and posts it for you.")
+
+
+def reply_unparsed(number: int, comments, token, log):
+    """A reply under every comment with a URL in it but no `<team>: <url> @ <commit>` line (a team name with a
+    space, no commit, ...): once per comment, never to our own replies, and not when its author posted a comment
+    that parses later. Without it the comment is skipped in silence and the team waits for a row that never comes."""
+    if not token:
+        log("no GITHUB_TOKEN: a comment without a submission line gets no reply")
+        return
+    seen = "\n".join(c.get("body") or "" for c in comments)
+    for i, c in enumerate(comments):
+        body, who = c.get("body") or "", c.get("user", {}).get("login", "?")
+        if REPLY_TAG in body or "://" not in body or LINE.search(body) or REPLY_MARK.format(c["id"]) in seen:
+            continue                                   # our own reply (it quotes an example URL), no URL, parses, replied
+        if any(LINE.search(d.get("body") or "") and d.get("user", {}).get("login") == who for d in comments[i + 1:]):
+            continue
+        text = f"@{who} {HOW}\n\n{REPLY_MARK.format(c['id'])}"
+        req = urllib.request.Request(f"https://api.github.com/repos/{ISSUE_REPO}/issues/{number}/comments",
+                                     data=json.dumps({"body": text}).encode(), method="POST",
+                                     headers={**api_headers(token), "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                r.read()
+            log(f"replied to the comment of {who} at {c.get('created_at')}: no submission line in it")
+        except urllib.error.HTTPError as e:
+            log(f"could not reply to the comment of {who} at {c.get('created_at')} (HTTP {e.code}: "
+                "the workflow needs `issues: write`)")
 
 
 def teams_from_file(path: Path):
@@ -338,11 +382,12 @@ def main():
     ap.add_argument("--timeout", type=float, default=600, help="seconds per dataset, the contract's 600")
     ap.add_argument("--team-budget", type=float, help="seconds a submission gets for the whole suite (CI: 2400); the rest counts as not run")
     ap.add_argument("--jobs", type=int, default=1, help="teams scored at the same time (CI: 2)")
+    ap.add_argument("--notify", action="store_true", help="reply on the issue to a comment with a URL but no submission line (CI; GITHUB_TOKEN with issues: write)")
     ap.add_argument("--cache", metavar="DIR", help="reuse a team's result when its commit was scored on this suite before (default with --publish: <README dir>/results/cache; needs SEALED_SEED)")
     a = ap.parse_args()
     out = Path(a.out).expanduser().resolve()
     log = print
-    teams = teams_from_file(Path(a.teams)) if a.teams else teams_from_issue(a.issue)
+    teams = teams_from_file(Path(a.teams)) if a.teams else teams_from_issue(a.issue, notify=a.notify, log=log)
     if a.team:
         missing = sorted(set(a.team) - set(teams))
         if missing:

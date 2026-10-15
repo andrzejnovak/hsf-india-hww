@@ -36,8 +36,10 @@ cd ~/hsf-india-hww && bash submit.sh <team-name> <git url>                      
 
 Post that line, `<team-name>: <git url> @ <commit>`, as a comment on
 [issue 1](https://github.com/andrzejnovak/hsf-india-hww/issues/1) (`submit.sh` posts it for you when `gh` is
-logged in). Every comment starts the sealed run: your commit on datasets nobody has seen, and the table below a few
-minutes later. Submit as often as you like; the last comment per team before the deadline is the one that counts.
+logged in; the team name is letters, digits, `-` and `_` only, no spaces, and a comment without a line in that
+form gets a reply saying so instead of a leaderboard row). Every comment starts the sealed run: your commit on
+datasets nobody has seen, and the table below a few minutes later. Submit as often as you like; the last comment
+per team before the deadline is the one that counts.
 Pushing from a Binder session needs a GitHub token as the password (github.com → Settings → Developer settings →
 Personal access tokens); from your laptop it is your usual push.
 
