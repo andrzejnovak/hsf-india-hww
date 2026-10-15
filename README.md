@@ -111,16 +111,16 @@ _Sealed run of 2026-10-15 07:29 UTC: 31 datasets nobody has seen, every submissi
 </details>
 <!-- /leaderboard -->
 
-### Reading the tables
+### Reading the table
 
 One row per team, its last submitted commit, run on the same sealed datasets every time (a fixed suite, so runs
 are comparable). Each dataset has its own planted signal strength μ and background rate; on half of them the
-Higgs mass stays at 125 GeV (within 2 GeV), on the other half it is anywhere between 100 and 150 GeV. The table
+Higgs mass stays at 125 GeV (within 2 GeV), on the other half it is anywhere between 100 and 150 GeV. This table
 scores μ on the fixed-mass datasets alone: whether the μ you report follows the planted μ, with error bars that
-mean what they say; the mass is not scored there, so a wrong mass cannot drag μ along. Folded under it, the
-table with the mass: μ and the mass, each by the same rule, on every dataset, where the two have to move
-together. The two plots below show what is measured, for the three example pipelines on 30 datasets of their
-own (`make_plots.py`); yours look the same with `score_suite.py`, see the end.
+mean what they say. The mass is not scored here, so a wrong mass cannot drag μ along; μ and the mass together, on
+every dataset, is a page of its own, [LEADERBOARD_MASS.md](LEADERBOARD_MASS.md). The two plots below show what is
+measured, for the three example pipelines on 30 datasets of their own (`make_plots.py`); yours look the same with
+`score_suite.py`, see the end.
 
 - **level**, the score. **0**, no measurement: the self-check fails, fewer than 90 % of the datasets run, or
   the slope is below 0.8 (the stub reports a constant: slope 0). **1**, follows the truth: slope ≥ 0.8. **2**,
@@ -137,9 +137,6 @@ own (`make_plots.py`); yours look the same with `score_suite.py`, see the end.
 - **self-check**: hygiene, the contract and determinism on the public dataset, the check `submit.sh` runs;
   FAIL is level 0.
 - **submitted**: the commit that ran, and when and by whom it was posted.
-- **With the mass**, the folded table: **level μ** by the rule above on every dataset, and **level mass** the
-  same rule for the optional `mH` (0 when it is not reported on every dataset); ordered by level μ, then level
-  mass, then the distance.
 
 ![reported against planted: the three example pipelines on 30 datasets](figs/recovery.png)
 
@@ -150,10 +147,11 @@ with a seed you don't have; `make_suite.py` plants the same mix of fixed and mov
 
 ```bash
 python3 make_suite.py suites/mine --n 10 --seed 7
-python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png
+python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png --plot-main mu.png
 ```
 
-Each team's recovery plot on the sealed datasets themselves is folded under the tables after every run. It shows
-the planted values of the sealed suite, the same suite every run: use it to see where your score is lost, not to
-fit a correction to it; a correction tuned to those points is a hard-coded answer, against the rules and plain to
-see in your code.
+Each team's plot on the sealed datasets themselves, μ on the fixed-mass ones, is folded under the table after
+every run; the one with the mass on every dataset is on the [mass page](LEADERBOARD_MASS.md). They show the
+planted values of the sealed suite, the same suite every run: use them to see where your score is lost, not to
+fit a correction to them; a correction tuned to those points is a hard-coded answer, against the rules and plain
+to see in your code.

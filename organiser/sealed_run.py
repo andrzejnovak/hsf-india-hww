@@ -10,9 +10,10 @@ Without --seed the suite is drawn from a seed made up on the spot and never prin
 self-contained (CI: .github/workflows/sealed_run.yml runs it on every comment on the submissions issue and
 commits the table into the README). With --as USER the submissions run as that user through sudo -n, with the
 truths unreadable to it (<out> is 711, <out>/truths 700) and a scrubbed environment. --publish writes the
-leaderboard table between the `<!-- leaderboard -->` markers of that README; --plots also copies each team's
-recovery plot beside it (results/<team>.png) and links it in a folded block, a cached team keeping the plot
-published before. The plots show the planted values per dataset of a suite that stays the same: publish them
+leaderboard table between the `<!-- leaderboard -->` markers of that README and the table with the mass between
+the same markers of LEADERBOARD_MASS.md beside it; --plots also copies each team's plots beside them
+(results/<team>.png, results/<team>-mass.png) and links them in a folded block on each page, a cached team keeping
+the plots published before. The plots show the planted values per dataset of a suite that stays the same: publish them
 with that in mind (CI does, every run). --fresh ignores the cache and scores everyone again: the final run.
 
 Submissions are the comments on the submissions issue (--issue, default 1 of andrzejnovak/hsf-india-hww,
@@ -32,10 +33,10 @@ then score_suite.score on every sealed dataset (score.txt, score.json, recovery.
 without a sandbox: run this in a throwaway session or a VM rather than on your own account; the private
 harness's `sbh eval` on the clones is the sandboxed alternative (organiser/ORGANISER.md).
 
-Two tables. The main one scores mu alone, on the datasets whose Higgs mass stays at 125 GeV (within 2 GeV;
-make_suite flags them mass_fixed: half of the drawn datasets, and seed_000), so that the mass does not pull mu
-along. Folded under it (a <details> block in the README), the table with the mass: mu and mH on every dataset,
-the mass moving between 100 and 150 GeV. Levels, as the pitch defines them (change `level` below if the rule changes):
+Two tables on two pages. The README's scores mu alone, on the datasets whose Higgs mass stays at 125 GeV (within
+2 GeV; make_suite flags them mass_fixed: half of the drawn datasets, and seed_000), so that the mass does not pull
+mu along. LEADERBOARD_MASS.md beside it holds the table with the mass: mu and mH on every dataset, the mass moving
+between 100 and 150 GeV. Levels, as the pitch defines them (change `level` below if the rule changes):
   0  self-check failed, fewer than 90 % of the datasets gave a valid RESULT.json, or no slope
   1  a measurement: the slope of reported vs planted mu is at least 0.8
   2  level 1 with honest error bars: a pull width within [0.5, 1.5], and no false discovery
@@ -159,8 +160,9 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
     (res / "score.json").write_text(json.dumps(r, indent=1, default=str))
     log("main table, mu on the datasets whose mass stays at 125 GeV:"); S.report(r["agg_main"], log)
     log("with the mass, every dataset:"); S.report(r["agg"], log)
-    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run"):
+    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run, with the mass"):
         log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
+    S.plot(r["rows"], res / "recovery_mu.png", title=f"{team} — sealed run", which="main")
     e = {"team": team, "check_ok": check_ok, "submitted": submitted, "main": r["agg_main"], "full": r["agg"],
          "level": level(r["agg_main"], check_ok), "distance": distance(r["agg_main"]), "rows": r["rows"],
          "url": entry["url"], "commit": entry["commit"],
@@ -336,36 +338,60 @@ def fmt(x, f="{:.2f}"):
 MARK = ("<!-- leaderboard -->", "<!-- /leaderboard -->")
 
 
+MASS_PAGE = "LEADERBOARD_MASS.md"
+
+
 def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None):
-    """The table (and, with plots, each team's recovery plot) into the README between the markers."""
-    text = readme.read_text()
-    if MARK[0] not in text or MARK[1] not in text:
-        raise SystemExit(f"{readme} has no {MARK[0]} ... {MARK[1]} markers")
+    """Two pages. The README gets the main table, mu on the fixed-mass datasets, and with plots each team's mu
+    plot on those datasets (results/<team>.png); LEADERBOARD_MASS.md beside it gets the table with the mass on
+    every dataset and each team's two-panel plot (results/<team>-mass.png). A team scored this run brings new
+    plots; a cached one keeps the plots published before."""
     when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     n, k = max(e["full"]["n"] for e in entries), max(e["main"]["n_picked"] for e in entries)
-    body = [f"_Sealed run of {when}: {n} datasets nobody has seen, every submission on the "
-            f"[issue](https://github.com/{ISSUE_REPO}/issues/1) at its last comment. The table scores μ on the {k} datasets "
-            f"whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all {n}, the mass moving between 100 and 150 GeV. "
-            + ("Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom." if plots else "Recovery plots follow after the deadline.")
-            + (f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else "") + "_", "",
-            table_main(entries), "", "<details>", "<summary><b>With the mass</b>: μ and the mass on every dataset, the mass moving</summary>", "",
-            table_full(entries), "", "</details>"]
+    issue = f"[issue](https://github.com/{ISSUE_REPO}/issues/1)"
+    budget_note = f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else ""
+    pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
+    main = [f"_Sealed run of {when}: {n} datasets nobody has seen, every submission on the {issue} at its last comment; "
+            f"μ scored on the {k} of them whose Higgs mass stays at 125 GeV. The same with the mass, on all {n}: "
+            f"[{MASS_PAGE}]({MASS_PAGE})." + (" Each team's plot on those datasets is folded at the bottom." if plots else "") + budget_note + "_",
+            "", table_main(entries)]
+    mass = [f"_Sealed run of {when}: μ and the mass on all {n} sealed datasets, the mass moving between 100 and 150 GeV; "
+            f"the main table, μ on the {k} fixed-mass datasets, is in the [README](README.md)."
+            + (" Each team's plot on every dataset is folded at the bottom." if plots else "") + budget_note + "_",
+            "", table_full(entries)]
     if plots:
-        pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
-        shown = []
-        for e in sorted(entries, key=lambda e: (-e["level"], e["distance"], e["team"])):
-            src, dst = results / e["team"] / "recovery.png", pdir / f"{e['team']}.png"
-            if src.is_file():
-                shutil.copy(src, dst)               # scored this run: a new plot
-            elif not dst.is_file():
-                continue                            # not fetched, or cached without a plot from before
-            shown += ["", f"**{e['team']}** (level {e['level']})", "", f"![{e['team']}](results/{e['team']}.png)"]
-        if shown:
-            body += ["", "<details>", "<summary><b>Recovery plots</b>, per team: reported against planted on the sealed datasets, "
-                     "each point coloured by how far it sits from the truth in units of its own error bar</summary>"] + shown + ["", "</details>"]
+        main += plot_block(sorted(entries, key=lambda e: (-e["level"], e["distance"], e["team"])), results, pdir, "recovery_mu.png", "",
+                           "reported against planted μ on the fixed-mass datasets, each point coloured by how far it sits from the truth in units of its own error bar",
+                           lambda e: f"level {e['level']}")
+        mass += plot_block(sorted(entries, key=lambda e: (-level(e["full"], e["check_ok"]), -mass_level(e["full"]), distance(e["full"]), e["team"])),
+                           results, pdir, "recovery.png", "-mass",
+                           "μ and the mass, reported against planted on every sealed dataset, filled points the fixed-mass datasets, hollow the moving ones",
+                           lambda e: f"level μ {level(e['full'], e['check_ok'])}, mass {mass_level(e['full'])}")
+    write_page(readme, main, log)
+    write_page(readme.parent / MASS_PAGE, mass, log)
+
+
+def plot_block(entries, results: Path, pdir: Path, src_name: str, suffix: str, summary: str, label):
+    """The folded block of per-team plots for one page: a plot made this run is copied into results/, a team
+    without one keeps the plot published before, a team with neither is left out."""
+    shown = []
+    for e in entries:
+        src, dst = results / e["team"] / src_name, pdir / f"{e['team']}{suffix}.png"
+        if src.is_file():
+            shutil.copy(src, dst)
+        elif not dst.is_file():
+            continue
+        shown += ["", f"**{e['team']}** ({label(e)})", "", f"![{e['team']}](results/{dst.name})"]
+    return ["", "<details>", f"<summary><b>Recovery plots</b>, per team: {summary}</summary>"] + shown + ["", "</details>"] if shown else []
+
+
+def write_page(page: Path, body, log):
+    text = page.read_text()
+    if MARK[0] not in text or MARK[1] not in text:
+        raise SystemExit(f"{page} has no {MARK[0]} ... {MARK[1]} markers")
     head, tail = text.split(MARK[0], 1)[0], text.split(MARK[1], 1)[1]
-    readme.write_text(head + MARK[0] + "\n" + "\n".join(body) + "\n" + MARK[1] + tail)
-    log(f"published into {readme}" + (f" with plots under {readme.parent / 'results'}" if plots else ""))
+    page.write_text(head + MARK[0] + "\n" + "\n".join(body) + "\n" + MARK[1] + tail)
+    log(f"published into {page}")
 
 
 def md_table(head, rows):
@@ -489,13 +515,13 @@ def stage_publish(a, out: Path, log):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, help="the secret master seed; default: made up for this run and never printed")
-    ap.add_argument("--n", type=int, default=31, help="datasets in the sealed suite, public seed_000 included; half of the drawn ones keep the mass at 125 (default 31)")
+    ap.add_argument("--n", type=int, default=51, help="datasets in the sealed suite, public seed_000 included; half of the drawn ones keep the mass at 125 (default 51)")
     ap.add_argument("--issue", type=int, default=1, help=f"the submissions issue of {ISSUE_REPO} (default 1)")
     ap.add_argument("--teams", help="read the `<team>: <url> @ <commit>` lines from this file instead of the issue")
     ap.add_argument("--out", default="~/hack-sealed", help="private working directory: suite, truths, submissions, results (default ~/hack-sealed)")
     ap.add_argument("--team", action="append", help="only these teams (repeatable); --stage score: the one team")
     ap.add_argument("--as", dest="as_user", metavar="USER", help="run the submissions as this user through sudo -n (CI: nobody)")
-    ap.add_argument("--publish", metavar="README", help="write the leaderboard between the markers of this README")
+    ap.add_argument("--publish", metavar="README", help="write the leaderboard between the markers of this README (and of LEADERBOARD_MASS.md beside it)")
     ap.add_argument("--plots", action="store_true", help="with --publish: each team's recovery plot too, folded under the tables (they show the planted values)")
     ap.add_argument("--fresh", action="store_true", help="ignore the cache: score every team again (the final run)")
     ap.add_argument("--no-check", action="store_true", help="skip the self-check (its verdict then reads FAIL)")

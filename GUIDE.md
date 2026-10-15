@@ -44,7 +44,7 @@ with a few parameters, and a small neural network.
    same JSON). The level is
    reached when the error bars on μ are honest on the sealed datasets (pulls of width ≈ 1) and nothing is
    claimed on the empty ones; the optional `mH` of the contract, reported on every dataset, gets its own level
-   by the same rule in the table folded under the main one, scored independently of μ. Better features, a classifier that keeps the mass information, a
+   by the same rule on the mass page beside the README, scored independently of μ. Better features, a classifier that keeps the mass information, a
    three-dimensional score × m<sub>T</sub> × m<sub>ll</sub> fit, a treatment of the template statistics are
    all open.
 3. **The agent does it.** A brief, a check it must pass, a reviewer, a second model: whatever gets
@@ -185,8 +185,9 @@ is right there and wrong elsewhere has hard-coded something.
 
 The leaderboard is levels, from two tests on the sealed datasets (EVAL_CONTRACT.md §3 has the full list of
 aggregates; they are all in the sealed run's `results/`). Its main table scores μ alone, on the sealed datasets
-whose Higgs mass stays at 125 GeV (within 2 GeV: half of them), so that the mass cannot drag μ along; the table
-folded under it adds the mass, on every dataset, where the mass moves between 100 and 150 GeV:
+whose Higgs mass stays at 125 GeV (within 2 GeV: half of them), so that the mass cannot drag μ along;
+[LEADERBOARD_MASS.md](LEADERBOARD_MASS.md) beside it adds the mass, on every dataset, where the mass moves between
+100 and 150 GeV:
 
 - **level 0, no measurement**: the self-check fails, a dataset does not run, or the slope of reported vs
   planted μ is below 0.8 (the stub's slope is 0).
@@ -195,8 +196,8 @@ folded under it adds the mass, on every dataset, where the mass moves between 10
   small *and* too large both fail), and no discovery is claimed on a dataset without a Higgs.
 - **level 3** is judged when you present: how the agent got there.
 
-The contract's optional `mH`, reported on every scored dataset, gets its own level by the same rule in the
-folded table, scored independently of μ (0 when it is not reported); that table orders by the μ level first.
+The contract's optional `mH`, reported on every scored dataset, gets its own level by the same rule on the mass
+page, scored independently of μ (0 when it is not reported); that table orders by the μ level first.
 `score_suite.py` prints both tables' numbers on your own suites (`make_suite.py` plants the same mix).
 
 ## Rules

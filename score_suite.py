@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run a submission on a suite you made with make_suite.py and score it the way the sealed evaluation does.
 
-    python3 score_suite.py <submission_dir> <suite_dir> [--plot recovery.png] [--timeout 600] [--truths DIR]
+    python3 score_suite.py <submission_dir> <suite_dir> [--plot recovery.png] [--plot-main mu.png] [--timeout 600] [--truths DIR]
 
 Runs `run.sh <dataset> <out>` once per seed (no sandbox: the real evaluation has one), reads RESULT.json, and
 compares with truth.json: a table of planted vs reported values with pulls, then the aggregates of
@@ -204,13 +204,15 @@ def report(agg, log=print):
         log(f"  discovery power: {agg['power']:.2f} ({agg['discoveries']} of {agg['n_strong']} strong seeds claimed)")
 
 
-def plot(rows, path, title=None):
-    """The recovery plot, reported against planted per POI, every scored dataset coloured by how far it sits from
-    the truth in units of its own error bar (|pull|: green within one error bar, red at three or more), which is
-    what inflates the pull width and bends the slope. Filled: the datasets the main table scores (mass at 125);
-    hollow: mass moving (the folded table); small grey: weak or null, outside the slope and the pulls. Each panel's
-    title carries the level with the slope and pull width behind it, and the mean error bar: the precision of the
-    analysis, the number to push down once the pulls are honest. Returns False without matplotlib."""
+def plot(rows, path, title=None, which="full"):
+    """The recovery plot, reported against planted, every scored dataset coloured by how far it sits from the
+    truth in units of its own error bar (|pull|: green within one error bar, red at three or more), which is what
+    inflates the pull width and bends the slope. which="main": the mu panel alone, on the fixed-mass datasets the
+    README's table scores, the moving-mass ones left out; "full": every reported POI on every dataset, filled
+    markers the fixed-mass datasets, hollow the moving-mass ones (LEADERBOARD_MASS.md). Small grey: weak or null,
+    outside the slope and the pulls. Each panel's title carries the level with the slope and pull width behind it,
+    and the mean error bar: the precision of the analysis, the number to push down once the pulls are honest.
+    Returns False without matplotlib."""
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -219,10 +221,11 @@ def plot(rows, path, title=None):
         from matplotlib.colors import Normalize
     except ImportError:
         return False
-    ok = [r for r in rows if r["ok"]]
-    names = [p for p in ALL_POIS if any(p in r for r in ok)] or ["mu"]
-    aggs = {"mu": aggregate(rows, mass_fixed, POIS), "mH": aggregate(rows)}
-    where = {"mu": "the fixed-mass datasets", "mH": "every dataset"}
+    main = which == "main"
+    ok = [r for r in rows if r["ok"] and (not main or mass_fixed(r["truth"]))]
+    names = ["mu"] if main else ([p for p in ALL_POIS if any(p in r for r in ok)] or ["mu"])
+    agg = aggregate(rows, mass_fixed, POIS) if main else aggregate(rows)
+    where = "the fixed-mass datasets" if main else "every dataset"
     cmap, norm = plt.get_cmap("RdYlGn_r"), Normalize(0.0, 3.0)
     fig, axes = plt.subplots(1, len(names), figsize=(5.8 * len(names), 4.9), squeeze=False, constrained_layout=True)
     for ax, name in zip(axes[0], names):
@@ -234,7 +237,7 @@ def plot(rows, path, title=None):
             if strong:
                 c = cmap(norm(abs(r[f"pull_{name}"])))
                 ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=5.5, capsize=2, color=c, ecolor=c,
-                            mec=c, mfc=c if mass_fixed(r["truth"]) else "none", mew=1.4, alpha=0.95, zorder=3)
+                            mec=c, mfc=c if (main or mass_fixed(r["truth"])) else "none", mew=1.4, alpha=0.95, zorder=3)
             else:
                 ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=3.5, capsize=1.5, color="0.65", alpha=0.6, zorder=2)
         lo, hi = ax.get_xlim()
@@ -242,15 +245,15 @@ def plot(rows, path, title=None):
         ax.set_xlim(lo, hi)
         ax.set_xlabel(f"planted {name}{unit}"); ax.set_ylabel(f"reported {name}{unit}")
         ax.legend(loc="upper left", frameon=False)
-        a = aggs[name]; p = a["pois"].get(name)
-        sel = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
-               and (name != "mu" or mass_fixed(r["truth"]))]
+        p = agg["pois"].get(name)
+        sel = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
         err = f"{np.mean([r[f'{name}_e'] for r in sel]):.2f}{unit.strip(' []')}" if sel else "–"
-        ax.set_title((f"level {level_of(a, name)}: slope {p['slope']:.2f}, pull width {p['width']:.2f}" if p else "no slope: not scored")
-                     + f" on {where[name]}\nmean error bar {err} over {len(sel)} scored datasets", fontsize=9)
+        ax.set_title((f"level {level_of(agg, name)}: slope {p['slope']:.2f}, pull width {p['width']:.2f}" if p else "no slope: not scored")
+                     + f" on {where}\nmean error bar {err} over {len(sel)} scored datasets", fontsize=9)
     sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
     fig.colorbar(sm, ax=axes[0].tolist(), fraction=0.035, pad=0.02, label="|reported − planted| / your error bar")
-    note = "filled: mass at 125 (the main table), hollow: mass moving (the folded table), grey: weak or null, not scored"
+    note = ("the datasets the README's table scores: mass at 125 GeV; grey: weak or null, not scored" if main else
+            "filled: mass at 125 (the README's table), hollow: mass moving; grey: weak or null, not scored")
     fig.suptitle((title + "\n" if title else "") + note, fontsize=10 if title else 9)
     fig.savefig(path, dpi=130); plt.close(fig)
     return True
@@ -260,16 +263,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("submission")
     ap.add_argument("suite")
-    ap.add_argument("--plot", help="write the recovery plot (reported vs planted) to this PNG")
+    ap.add_argument("--plot", help="write the recovery plot (reported vs planted, every dataset, mu and the mass) to this PNG")
+    ap.add_argument("--plot-main", metavar="PNG", help="the README's view: mu alone on the fixed-mass datasets")
     ap.add_argument("--timeout", type=float, default=600)
     ap.add_argument("--truths", help="read truths from DIR/<seed>.json instead of <seed>/truth.json")
     a = ap.parse_args()
     r = score(Path(a.submission), Path(a.suite), a.timeout, Path(a.truths).resolve() if a.truths else None)
-    if a.plot:
-        if plot(r["rows"], a.plot):
-            print(f"plot: {a.plot}")
-        else:
-            print("no matplotlib: skipping the plot")
+    for path, which in ((a.plot, "full"), (a.plot_main, "main")):
+        if path:
+            print(f"plot: {path}" if plot(r["rows"], path, which=which) else "no matplotlib: skipping the plot")
 
 
 if __name__ == "__main__":
