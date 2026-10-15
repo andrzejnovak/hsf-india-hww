@@ -50,7 +50,7 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 06:39 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Recovery plots follow after the deadline. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 07:08 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
 
 | # | team          | level | slope μ | pull width μ | false disc. | self-check | submitted                                        |
 |---|---------------|-------|---------|--------------|-------------|------------|--------------------------------------------------|
@@ -70,6 +70,27 @@ _Sealed run of 2026-10-15 06:39 UTC: 31 datasets nobody has seen, every submissi
 | 3 | baseline-mt   | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)   |
 | 4 | baseline-nn   | 2       | 2          | 1.02    | 1.20         | 0.98       | 1.37            | 0/10        | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)   |
 | 5 | Pilots        | 0       | 0          | –       | –            | –          | –               | –           | FAIL       | a63b823 (2026-10-15T06:37:19Z by ishandhull2953) |
+
+</details>
+
+<details>
+<summary><b>Recovery plots</b>, per team: reported against planted on the sealed datasets, each point coloured by how far it sits from the truth in units of its own error bar</summary>
+
+**thursday-demo** (level 2)
+
+![thursday-demo](results/thursday-demo.png)
+
+**Horizon** (level 2)
+
+![Horizon](results/Horizon.png)
+
+**baseline-mt** (level 2)
+
+![baseline-mt](results/baseline-mt.png)
+
+**baseline-nn** (level 2)
+
+![baseline-nn](results/baseline-nn.png)
 
 </details>
 <!-- /leaderboard -->
