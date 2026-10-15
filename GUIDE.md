@@ -43,8 +43,8 @@ with a few parameters, and a small neural network.
    template fit: the room is real (`examples/torch_nn` is the same network trained with PyTorch, exported to the
    same JSON). The level is
    reached when the error bars on μ are honest on the sealed datasets (pulls of width ≈ 1) and nothing is
-   claimed on the empty ones; the optional `mH` of the contract, reported on every dataset, gets its own level
-   by the same rule on the mass page beside the README, scored independently of μ. Better features, a classifier that keeps the mass information, a
+   claimed on the empty ones; the optional `mH` of the contract is reported for the record, not scored: every
+   sealed dataset keeps the mass at 125 GeV. Better features, a classifier that keeps the mass information, a
    three-dimensional score × m<sub>T</sub> × m<sub>ll</sub> fit, a treatment of the template statistics are
    all open.
 3. **The agent does it.** A brief, a check it must pass, a reviewer, a second model: whatever gets
@@ -185,10 +185,9 @@ is right there and wrong elsewhere has hard-coded something.
 
 The leaderboard is one number, the score, explained after the levels. The levels are not scored: they are the
 milestones you report when you present, from two tests on the sealed datasets (EVAL_CONTRACT.md §3 has the full list of aggregates;
-they are all in the sealed run's `results/`). The leaderboard's main table scores μ alone, on the sealed datasets
-whose Higgs mass stays at 125 GeV (within 2 GeV: half of them), so that the mass cannot drag μ along;
-[LEADERBOARD_MASS.md](LEADERBOARD_MASS.md) beside it adds the mass, on every dataset, where the mass moves between
-100 and 150 GeV:
+they are all in the sealed run's `results/`). The leaderboard scores μ alone: every sealed dataset keeps the Higgs
+mass at 125 GeV (within 2 GeV), so that the mass cannot drag μ along, and the optional `mH` you report is for the
+record:
 
 - **level 0, no measurement**: the self-check fails, a dataset does not run, or the slope of reported vs
   planted μ is below 0.8 (the stub's slope is 0).
@@ -197,30 +196,30 @@ whose Higgs mass stays at 125 GeV (within 2 GeV: half of them), so that the mass
   small *and* too large both fail), and no discovery is claimed on a dataset without a Higgs.
 - **level 3** is judged when you present: how the agent got there.
 
-The contract's optional `mH`, reported on every scored dataset, gets its own level by the same rule on the mass
-page, scored independently of μ (0 when it is not reported). The tables show no level; they are ordered by one
-number, the **score**: 100 × the template fit's calibrated error bar over yours, the calibrated error bar
-being the mean error bar you quote times your pull width where that is above 1, the error bar you would have
-had to quote to be honest. The template fit scores 100; a tighter honest measurement scores more; shrinking,
-padding, a bias and a wrong slope all cost. `score_suite.py` prints the numbers behind both tables on your own
+The table shows no level; it is ordered by one number, the **score**: 100 × sensitivity × robustness. Sensitivity is the template fit's error bar over yours;
+robustness is 1 over your own pull width where that is above 1, so 1 when your error bars are honest. The
+template fit with honest error bars scores 100; a tighter measurement with honest pulls scores more; quoting
+less than you have gains in one factor what it loses in the other, padding costs, a bias and a wrong slope widen
+the pulls and cost. `score_suite.py` prints the numbers behind both tables on your own
 suites (`make_suite.py` plants the same mix).
 
 ## Rules
 
-- numpy, scipy and torch (the CPU build) at run time; no other packages, no network, ≤ 600 s per dataset, no
+- numpy, scipy and torch (the CPU build) at run time; no other packages, no network, ≤ 600 s per dataset and 60
+  minutes for the whole sealed suite, no
   data files and no binary model files inside `submission/` (a model as text is fine: a `state_dict` dumped as
   JSON lists loads back with `load_state_dict`; `.pt` files are refused). Train beforehand, with what you like:
   a model trained inside `run.sh` eats the 600 s and is hard to make deterministic. `examples/torch_nn` is
   `examples/nn_fit` trained with PyTorch, evaluated with numpy (`fit.py`) or with torch (`fit_torch.py`).
 - `run.sh` must be deterministic (fix your random seeds) and read only `<dataset_dir>` and its own folder.
-- Nothing from the public truth (125 GeV, μ = 1, nominal background) may be hard-coded: the sealed datasets
-  differ in all three (half of them keep the mass within 2 GeV of 125, for the main table; the rest
-  move it between 100 and 150).
+- Nothing from the public truth (μ = 1, nominal background) may be hard-coded: every sealed dataset plants its
+  own μ and background rate. The mass stays within 2 GeV of 125 on all of them; a fit that measures it, as the
+  examples do, is still the honest pipeline.
 - The data are drawn from the simulation you train on. Matching data events back to pool events to read off
   their labels is cheating, not analysis; the organisers read every submission.
 - Teams of three or so. Model variance is real: run the agent twice before you trust a design.
-- The leaderboard: the μ level, then the mass level, then closest to slope 1 and width 1 first. Level 3 is
-  judged when you present: show the prompts and the runs.
+- The leaderboard: the score, 100 × sensitivity × robustness, sensitivity against the template fit. Level 3 is judged when
+  you present: show the prompts and the runs.
 
 ## The day
 

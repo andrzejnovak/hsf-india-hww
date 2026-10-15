@@ -10,10 +10,8 @@ Without --seed the suite is drawn from a seed made up on the spot and never prin
 self-contained (CI: .github/workflows/sealed_run.yml runs it on every comment on the submissions issue and
 commits the table into the README). With --as USER the submissions run as that user through sudo -n, with the
 truths unreadable to it (<out> is 711, <out>/truths 700) and a scrubbed environment. --publish writes the
-leaderboard table between the `<!-- leaderboard -->` markers of that README and the table with the mass between
-the same markers of LEADERBOARD_MASS.md beside it; --plots also copies each team's plots beside them
-(results/<team>.png, results/<team>-mass.png) and links them in a folded block on each page, a cached team keeping
-the plots published before. The plots show the planted values per dataset of a suite that stays the same: publish them
+leaderboard table between the `<!-- leaderboard -->` markers of that README; --plots also copies each team's plot
+beside it (results/<team>.png) and links it in a folded block, a cached team keeping the plot published before. The plots show the planted values per dataset of a suite that stays the same: publish them
 with that in mind (CI does, every run). --fresh ignores the cache and scores everyone again: the final run.
 
 Submissions are the comments on the submissions issue (--issue, default 1 of andrzejnovak/hsf-india-hww,
@@ -33,19 +31,19 @@ then score_suite.score on every sealed dataset (score.txt, score.json, recovery.
 without a sandbox: run this in a throwaway session or a VM rather than on your own account; the private
 harness's `sbh eval` on the clones is the sandboxed alternative (organiser/ORGANISER.md).
 
-Two tables on two pages. The README's scores mu alone, on the datasets whose Higgs mass stays at 125 GeV (within
-2 GeV; make_suite flags them mass_fixed: half of the drawn datasets, and seed_000), so that the mass does not pull
-mu along. LEADERBOARD_MASS.md beside it holds the table with the mass: mu and mH on every dataset, the mass moving
-between 100 and 150 GeV. Levels, as the pitch defines them (change `level` below if the rule changes):
+One table: mu alone, every sealed dataset keeping the Higgs mass at 125 GeV (within 2 GeV; make_suite flags them
+mass_fixed), mu and the background rate planted anew in each; the optional mass is reported, not scored (MASS_PAGE
+below brings back a second table with it, for a suite with moving-mass datasets). Levels, as the pitch defines
+them, are computed for the record (change `level` below if the rule changes):
   0  self-check failed, fewer than 90 % of the datasets gave a valid RESULT.json, or no slope
   1  a measurement: the slope of reported vs planted mu is at least 0.8
   2  level 1 with honest error bars: a pull width within [0.5, 1.5], and no false discovery
 The mass is optional and scored independently in the folded table: a team that reports mH on every scored
 dataset gets a mass level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when it is not reported.
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
-Order: the score, 100 x the template fit's (REFERENCE) calibrated error over the team's, the calibrated error
-being the mean error bar times the pull width above 1 (the mass page averages mu and the mass where reported);
-then the distance |slope - 1| + |ln width| on mu. No self-check pass, no score. The levels below are still computed
+Order: the score, 100 x sensitivity x robustness: the sensitivity the template fit's (REFERENCE) mean error bar
+over the team's, the robustness 1 over the team's own pull width where that is above 1 (honest error bars: 1), so
+that the template fit with honest error bars is 100; then the distance |slope - 1| + |ln width| on mu. No self-check pass, no score. The levels below are still computed
 (leaderboard.json, the cache) but no longer shown: the GUIDE's milestones, for the presentations.
 CI runs it in three stages, one team per runner: --stage plan reads the issue, replies where needed and writes
 --plan-out, the submissions and which of them need a run (the rest are in the cache); --stage score, once per
@@ -340,38 +338,52 @@ def fmt(x, f="{:.2f}"):
 MARK = ("<!-- leaderboard -->", "<!-- /leaderboard -->")
 
 
-MASS_PAGE = "LEADERBOARD_MASS.md"
+MASS_PAGE = None               # "LEADERBOARD_MASS.md" published a second table, mu and the mass on every dataset, when
+                               # make_suite drew moving-mass datasets (fixed_mass_fraction below 1); the mass is not scored now
 REFERENCE = "baseline-mt"      # the template fit: score 100
 FORMAT = 2                     # the cache entry's layout; bump it when the aggregates gain a field the tables need
 
 
-def err_cal(agg, poi):
-    a = agg["pois"].get(poi)
-    v = a and a.get("err_cal")
-    return v if v is not None and math.isfinite(v) and v > 0 else None
+def factors(e, ref, poi, which):
+    """(sensitivity, robustness) of a team's measurement of poi on a page's datasets: the reference's mean error
+    bar over the team's (an error bar needs a scale), and 1 over the team's pull width where that is above 1 (a
+    property of the measurement alone: 1 is honest error bars; a bias, a wrong slope or under-quoted errors widen
+    the pulls; padding is paid in sensitivity, not rewarded here). None where a number is missing."""
+    a, b = e[which]["pois"].get(poi), ref[which]["pois"].get(poi)
+    if not a or not b:
+        return None
+    try:
+        sens = b["err"] / a["err"]
+        rob = 1.0 / max(1.0, a["width"])
+    except (KeyError, ZeroDivisionError, TypeError):
+        return None
+    return (sens, rob) if math.isfinite(sens) and math.isfinite(rob) else None
 
 
 def score_of(e, ref, which):
-    """The leaderboard's one number: 100 x the reference's calibrated error over the team's, for mu alone (the
+    """The leaderboard's one number: 100 x sensitivity x robustness against the reference, for mu alone (the
     README, which="main") or averaged over mu and the mass where reported (the mass page, "full"); None without
     a self-check pass, a reference, or an error bar."""
     if ref is None or not e.get("check_ok"):
         return None
-    pois = ["mu"] if which == "main" else ["mu", "mH"]
-    ratios = []
-    for poi in pois:
-        own, base = err_cal(e[which], poi), err_cal(ref[which], poi)
-        if own is not None and base is not None:
-            ratios.append(base / own)
+    terms = []
+    for poi in (["mu"] if which == "main" else ["mu", "mH"]):
+        f = factors(e, ref, poi, which)
+        if f is not None:
+            terms.append(f[0] * f[1])
         elif poi == "mu":
             return None
-    return 100.0 * sum(ratios) / len(ratios)
+    return 100.0 * sum(terms) / len(terms)
 
 
 def with_scores(entries, which):
     """Each entry's score for a page, as (score, entry), the reference being the REFERENCE team of the run."""
-    ref = next((e for e in entries if e["team"] == REFERENCE and e.get("check_ok")), None)
+    ref = reference(entries)
     return [(score_of(e, ref, which), e) for e in entries]
+
+
+def reference(entries):
+    return next((e for e in entries if e["team"] == REFERENCE and e.get("check_ok")), None)
 
 
 def order(scored, *keys):
@@ -379,33 +391,33 @@ def order(scored, *keys):
 
 
 def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None):
-    """Two pages. The README gets the main table, mu on the fixed-mass datasets, and with plots each team's mu
-    plot on those datasets (results/<team>.png); LEADERBOARD_MASS.md beside it gets the table with the mass on
-    every dataset and each team's two-panel plot (results/<team>-mass.png). A team scored this run brings new
-    plots; a cached one keeps the plots published before."""
+    """The README gets the table, mu on the sealed datasets (all at the 125 GeV mass), and with plots each team's
+    mu plot (results/<team>.png); with MASS_PAGE set, a second page gets the table with the mass on every dataset
+    and each team's two-panel plot (results/<team>-mass.png). A team scored this run brings new plots; a cached
+    one keeps the plots published before."""
     when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     n, k = max(e["full"]["n"] for e in entries), max(e["main"]["n_picked"] for e in entries)
     issue = f"[issue](https://github.com/{ISSUE_REPO}/issues/1)"
-    budget_note = f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else ""
     pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
-    main = [f"_Sealed run of {when}: {n} datasets nobody has seen, every submission on the {issue} at its last comment; "
-            f"μ scored on the {k} of them whose Higgs mass stays at 125 GeV, the score 100 × the template fit's calibrated error bar "
-            f"over yours (see below). The same with the mass, on all {n}: [{MASS_PAGE}]({MASS_PAGE})." + (" Each team's plot on those datasets is folded at the bottom." if plots else "") + budget_note + "_",
+    main = [f"_Sealed run of {when}: every submission on the {issue} at its last comment, on {n} sealed datasets, the Higgs "
+            f"mass at 125 GeV in all of them and μ and the background rate planted anew in each"
+            + (f"; μ scored on the {k} whose mass stays at 125. With the mass, on all {n}: [{MASS_PAGE}]({MASS_PAGE})." if MASS_PAGE else ".") + "_",
             "", table_main(entries)]
     mass = [f"_Sealed run of {when}: μ and the mass on all {n} sealed datasets, the mass moving between 100 and 150 GeV; "
-            f"the main table, μ on the {k} fixed-mass datasets, is in the [README](README.md)."
-            + (" Each team's plot on every dataset is folded at the bottom." if plots else "") + budget_note + "_",
-            "", table_full(entries)]
+            f"μ alone on the {k} fixed-mass datasets: the [README](README.md)._",
+            "", table_full(entries)] if MASS_PAGE else None
     if plots:
         main += plot_block(order(with_scores(entries, "main"), lambda e: e["distance"]), results, pdir, "recovery_mu.png", "",
-                           "reported against planted μ on the fixed-mass datasets, each point coloured by how far it sits from the truth in units of its own error bar",
+                           "reported against planted μ on the sealed datasets, each point coloured by how far it sits from the truth in units of its own error bar",
                            lambda sc, e: f"score {fmt(sc, '{:.0f}')}")
+    if plots and MASS_PAGE:
         mass += plot_block(order(with_scores(entries, "full"), lambda e: distance(e["full"])),
                            results, pdir, "recovery.png", "-mass",
                            "μ and the mass, reported against planted on every sealed dataset, filled points the fixed-mass datasets, hollow the moving ones",
                            lambda sc, e: f"score {fmt(sc, '{:.0f}')}")
     write_page(readme, main, log)
-    write_page(readme.parent / MASS_PAGE, mass, log)
+    if MASS_PAGE:
+        write_page(readme.parent / MASS_PAGE, mass, log)
 
 
 def plot_block(scored, results: Path, pdir: Path, src_name: str, suffix: str, summary: str, label):
@@ -442,34 +454,38 @@ def fdr(a):
 
 
 def table_main(entries):
-    """The README's table: mu on the fixed-mass datasets, by score."""
-    head = ["#", "team", "score", "error μ", "slope μ", "pull width μ", "submitted"]
-    rows = []
+    """The leaderboard: mu on the sealed datasets, by score, with the two factors the score is made of and the
+    raw numbers behind them."""
+    head = ["#", "team", "score", "sensitivity", "robustness", "σ μ", "pull width μ", "slope μ", "submitted"]
+    ref, rows = reference(entries), []
     for i, (sc, e) in enumerate(order(with_scores(entries, "main"), lambda e: e["distance"]), 1):
         mu = e["main"]["pois"].get("mu")
-        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(mu and mu.get("err_cal")), fmt(mu and mu["slope"]),
-                     fmt(mu and mu["width"]), e.get("submitted") or "–"])
+        f = factors(e, ref, "mu", "main") if ref and e.get("check_ok") else None
+        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(f and f[0]), fmt(f and f[1]), fmt(mu and mu.get("err"), "{:.3f}"),
+                     fmt(mu and mu["width"]), fmt(mu and mu["slope"]), e.get("submitted") or "–"])
     return md_table(head, rows)
 
 
 def table_full(entries):
-    """The mass page's table: mu and the mass on every dataset, by score."""
-    head = ["#", "team", "score", "error μ", "error mass", "slope μ", "pull width μ", "slope mass", "pull width mass", "submitted"]
-    rows = []
+    """The table with the mass (MASS_PAGE): mu and the mass on every dataset, by score."""
+    head = ["#", "team", "score", "sensitivity μ", "robustness μ", "sensitivity mass", "robustness mass",
+            "σ μ", "σ mass", "slope μ", "slope mass", "submitted"]
+    ref, rows = reference(entries), []
     for i, (sc, e) in enumerate(order(with_scores(entries, "full"), lambda e: distance(e["full"])), 1):
         a = e["full"]; mu, mh = a["pois"].get("mu"), a["pois"].get("mH")
-        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"),
-                     fmt(mu and mu.get("err_cal")), fmt(mh and mh.get("err_cal"), "{:.1f}"),
-                     fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fmt(mh and mh["slope"]), fmt(mh and mh["width"]),
-                     e.get("submitted") or "–"])
+        fm = factors(e, ref, "mu", "full") if ref and e.get("check_ok") else None
+        fh = factors(e, ref, "mH", "full") if ref and e.get("check_ok") else None
+        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(fm and fm[0]), fmt(fm and fm[1]), fmt(fh and fh[0]), fmt(fh and fh[1]),
+                     fmt(mu and mu.get("err"), "{:.3f}"), fmt(mh and mh.get("err"), "{:.1f}"),
+                     fmt(mu and mu["slope"]), fmt(mh and mh["slope"]), e.get("submitted") or "–"])
     return md_table(head, rows)
 
 
 def leaderboard(entries, path_md: Path, path_json: Path, log):
     text = table_main(entries) + "\n\nWith the mass, every dataset:\n\n" + table_full(entries)
     path_md.write_text(f"# Leaderboard\n\n{text}\n\nThe first table scores μ on the datasets whose mass stays at 125 GeV, the second μ and the mass "
-                       f"on every dataset. score: 100 x {REFERENCE}'s calibrated error over the team's (the mean error bar times the pull width above 1; "
-                       f"on the second table averaged with the mass where reported); the order. The mass (`mH` in RESULT.json) is optional and counts "
+                       f"on every dataset. score: 100 x sensitivity x robustness, the sensitivity {REFERENCE}'s mean error bar over the team's, "
+                       f"the robustness 1 over the team's pull width where that is above 1 (on the second table averaged with the mass where reported); the order. The mass (`mH` in RESULT.json) is optional and counts "
                        f"when it is reported on every scored dataset. The GUIDE's levels are in leaderboard.json, not on the tables. The full numbers are in results/.\n")
     path_json.write_text(json.dumps([{k: v for k, v in e.items() if k != "rows"} for e in entries], indent=1, default=str))
     log("\n" + text)
@@ -550,13 +566,13 @@ def stage_publish(a, out: Path, log):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, help="the secret master seed; default: made up for this run and never printed")
-    ap.add_argument("--n", type=int, default=51, help="datasets in the sealed suite, public seed_000 included; half of the drawn ones keep the mass at 125 (default 51)")
+    ap.add_argument("--n", type=int, default=51, help="datasets in the sealed suite, public seed_000 included, all at the 125 GeV mass (default 51)")
     ap.add_argument("--issue", type=int, default=1, help=f"the submissions issue of {ISSUE_REPO} (default 1)")
     ap.add_argument("--teams", help="read the `<team>: <url> @ <commit>` lines from this file instead of the issue")
     ap.add_argument("--out", default="~/hack-sealed", help="private working directory: suite, truths, submissions, results (default ~/hack-sealed)")
     ap.add_argument("--team", action="append", help="only these teams (repeatable); --stage score: the one team")
     ap.add_argument("--as", dest="as_user", metavar="USER", help="run the submissions as this user through sudo -n (CI: nobody)")
-    ap.add_argument("--publish", metavar="README", help="write the leaderboard between the markers of this README (and of LEADERBOARD_MASS.md beside it)")
+    ap.add_argument("--publish", metavar="README", help="write the leaderboard between the markers of this README")
     ap.add_argument("--plots", action="store_true", help="with --publish: each team's recovery plot too, folded under the tables (they show the planted values)")
     ap.add_argument("--fresh", action="store_true", help="ignore the cache: score every team again (the final run)")
     ap.add_argument("--no-check", action="store_true", help="skip the self-check (its verdict then reads FAIL)")

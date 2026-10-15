@@ -98,45 +98,22 @@ _Sealed run of 2026-10-15 08:23 UTC: 51 datasets nobody has seen, every submissi
 
 ### Reading the table
 
-One row per team, its last submitted commit, run on the same sealed datasets every time (a fixed suite, so runs
-are comparable). Each dataset has its own planted signal strength μ and background rate; on half of them the
-Higgs mass stays at 125 GeV (within 2 GeV), on the other half it is anywhere between 100 and 150 GeV. This table
-scores μ on the fixed-mass datasets alone: how precisely the μ you report follows the planted μ, with error bars
-that mean what they say. The three levels of the [GUIDE](GUIDE.md) are milestones for when you present, not
-columns here. The mass is not scored here, so a wrong mass cannot drag μ along; μ and the mass together, on
-every dataset, is a page of its own, [LEADERBOARD_MASS.md](LEADERBOARD_MASS.md). The two plots below show what is
-measured, for the three example pipelines on 30 datasets of their own (`make_plots.py`); yours look the same with
-`score_suite.py`, see the end.
+Every team's last submitted commit, on the same sealed datasets each run. Each dataset has its own planted
+signal strength μ and background rate, and the Higgs mass at 125 GeV (within 2 GeV): a measurement of μ at a known
+mass. The mass you report (optional in RESULT.json) is for the record, not scored.
 
-- **score**, the one number the table is ordered by: 100 × the template fit's calibrated error on μ over yours.
-  The template fit (`baseline-mt`) scores 100; 115 means your honest error bar is 15 % tighter than its. No
-  self-check pass (hygiene, the contract, determinism on the public dataset: the check `submit.sh` runs), or
-  nothing run, is no score.
-- **error μ**: your calibrated error bar, the mean error bar you quote times the pull width where that is
-  above 1: the error bar you would have had to quote to be honest. A genuinely more precise measurement, its
-  pulls still of width 1, is a smaller calibrated error and a higher score: that is the game. Quoting a smaller
-  error bar than you have gains nothing, the pull width grows by the same factor; padding it costs you directly;
-  a bias or a wrong slope widens the pulls and costs too.
-- **slope**: a line fitted through reported against planted (the recovery plot below). 1 means your
-  measurement moves one-for-one with the truth; 0 that you report the same value whatever was planted.
-- **pull width**: the spread of (reported − planted) / your error bar across the datasets (the pulls plot
-  below). 1 means your error bars are honest; above it they are too small, below it too large.
-- **submitted**: the commit that ran, and when and by whom it was posted.
+- **score** = 100 × **sensitivity** × **robustness**, the order of the table. The template fit, `baseline-mt`,
+  with honest error bars would score 100.
+- **sensitivity**: the template fit's error bar on μ over yours, averaged over the scored datasets (**σ μ** is
+  yours). Bigger means a tighter measurement.
+- **robustness**: 1 over your pull width where that is above 1. The pulls are (reported − planted) / σ, and
+  their spread (**pull width μ**) is 1 when the error bars are honest, so robustness 1.00 is honest; a wrong
+  slope, a bias, or error bars smaller than the measurement supports all widen the pulls and lower it. Shrinking
+  σ alone moves nothing: what it gains in sensitivity it loses in robustness.
+- **slope μ**: a line through reported against planted; 1 is a measurement, 0 a constant.
 
-![reported against planted: the three example pipelines on 30 datasets](figs/recovery.png)
-
-![the pulls of the same run: (reported − planted) / error, against a width-1 Gaussian](figs/pulls.png)
-
-Your own plots and both tables' numbers, on datasets you make (the sealed ones are drawn from the same priors,
-with a seed you don't have; `make_suite.py` plants the same mix of fixed and moving masses):
-
-```bash
-python3 make_suite.py suites/mine --n 10 --seed 7
-python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png --plot-main mu.png
-```
-
-Each team's plot on the sealed datasets themselves, μ on the fixed-mass ones, is folded under the table after
-every run; the one with the mass on every dataset is on the [mass page](LEADERBOARD_MASS.md). They show the
-planted values of the sealed suite, the same suite every run: use them to see where your score is lost, not to
-fit a correction to them; a correction tuned to those points is a hard-coded answer, against the rules and plain
-to see in your code.
+Each team's plot, reported against planted on the scored datasets and coloured by the pull, is folded under
+the table. Yours, on datasets you make: `python3 make_suite.py suites/mine --n 10 --seed 7`, then
+`python3 score_suite.py ~/hack-<team>/submission suites/mine --plot-main mu.png`. The sealed plots show the
+planted values: for seeing where your score is lost, not for fitting a correction to (a hard-coded answer,
+against the rules). The three levels of the [GUIDE](GUIDE.md) are milestones for when you present, not columns here.

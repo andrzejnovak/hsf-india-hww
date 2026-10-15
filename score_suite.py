@@ -6,9 +6,9 @@
 Runs `run.sh <dataset> <out>` once per seed (no sandbox: the real evaluation has one), reads RESULT.json, and
 compares with truth.json: a table of planted vs reported values with pulls, then the aggregates of
 EVAL_CONTRACT.md section 3 -- sensitivity (slope of reported vs planted), bias (mean pull), calibration (pull
-width), recovery, false-discovery rate and discovery power -- twice: as the leaderboard's main table does, mu
-alone on the datasets whose mass stays at 125 GeV (truth.json "mass_fixed", half of a make_suite.py suite),
-and as the table folded under it does, mu and the mass on every dataset.  Pulls and slopes use the seeds whose
+width), recovery, false-discovery rate and discovery power -- twice: as the leaderboard does, mu alone on the
+datasets whose mass stays at 125 GeV (truth.json "mass_fixed": every dataset of a make_suite.py suite as shipped),
+and for the record mu and the mass on every dataset.  Pulls and slopes use the seeds whose
 injected signal has expected local significance >= 5; null seeds count towards the false-discovery rate.  --truths reads
 each seed's truth from DIR/<seed>.json instead of <seed>/truth.json (the sealed run keeps them apart).
 """
@@ -134,9 +134,9 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
                 + f"  {zexp:5.1f}" + (f"\n    {errlog.strip()[-300:]}" if errlog.strip() else ""))
         rows.append(row)
     agg_main, agg = aggregate(rows, mass_fixed, POIS, "the datasets whose mass stays at 125 GeV"), aggregate(rows)
-    log("\n== the main table: mu on the datasets whose mass stays at 125 GeV")
+    log("\n== the leaderboard: mu on the datasets whose mass stays at 125 GeV")
     report(agg_main, log)
-    log("\n== folded under it, with the mass: every dataset")
+    log("\n== for the record, with the mass, every dataset (not on the leaderboard)")
     report(agg, log)
     return {"rows": rows, "agg": agg, "agg_main": agg_main}
 
@@ -212,8 +212,8 @@ def plot(rows, path, title=None, which="full"):
     """The recovery plot, reported against planted, every scored dataset coloured by how far it sits from the
     truth in units of its own error bar (|pull|: green within one error bar, red at three or more), which is what
     inflates the pull width and bends the slope. which="main": the mu panel alone, on the fixed-mass datasets the
-    README's table scores, the moving-mass ones left out; "full": every reported POI on every dataset, filled
-    markers the fixed-mass datasets, hollow the moving-mass ones (LEADERBOARD_MASS.md). Small grey: weak or null,
+    leaderboard scores (every one of a suite as shipped); "full": every reported POI on every dataset, filled
+    markers the fixed-mass datasets, hollow any moving-mass ones. Small grey: weak or null,
     outside the slope and the pulls. Each panel's title carries the level with the slope and pull width behind it,
     and the mean error bar: the precision of the analysis, the number to push down once the pulls are honest.
     Returns False without matplotlib."""
@@ -258,7 +258,7 @@ def plot(rows, path, title=None, which="full"):
     sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
     fig.colorbar(sm, ax=axes[0].tolist(), fraction=0.035, pad=0.02, label="|reported − planted| / your error bar")
     note = ("the datasets the README's table scores: mass at 125 GeV; grey: weak or null, not scored" if main else
-            "filled: mass at 125 (the README's table), hollow: mass moving; grey: weak or null, not scored")
+            "filled: mass at 125 (the leaderboard), hollow: mass moving; grey: weak or null, not scored")
     fig.suptitle((title + "\n" if title else "") + note, fontsize=10 if title else 9)
     fig.savefig(path, dpi=130); plt.close(fig)
     return True
@@ -269,7 +269,7 @@ def main():
     ap.add_argument("submission")
     ap.add_argument("suite")
     ap.add_argument("--plot", help="write the recovery plot (reported vs planted, every dataset, mu and the mass) to this PNG")
-    ap.add_argument("--plot-main", metavar="PNG", help="the README's view: mu alone on the fixed-mass datasets")
+    ap.add_argument("--plot-main", metavar="PNG", help="the leaderboard's view: mu alone on the fixed-mass datasets")
     ap.add_argument("--timeout", type=float, default=600)
     ap.add_argument("--truths", help="read truths from DIR/<seed>.json instead of <seed>/truth.json")
     a = ap.parse_args()

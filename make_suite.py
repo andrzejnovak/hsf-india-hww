@@ -4,9 +4,9 @@
     python3 make_suite.py suites/mine --n 10 --seed 7 [--pool datasets/public/seed_000/mc/pool.npz] [--design JSON]
 
 seed_000 is at the public truth (m_H = 125 GeV, mu = 1, nominal background); the others draw mu in [0, 3] with a
-fifth at 0 and the background normalisation within 10 % of nominal, and m_H in [100, 150], except that the first
-half of them keep it within 2 GeV of 125 (truth.json: "mass_fixed"): those, with seed_000, are the datasets the
-leaderboard's main table scores mu on; the table with the mass folded under it scores every dataset. Each dataset holds
+fifth at 0 and the background normalisation within 10 % of nominal, and keep m_H within 2 GeV of 125 (truth.json:
+"mass_fixed"), the datasets the leaderboard scores mu on. PRIORS["fixed_mass_fraction"] below 1 would let the rest
+move the mass over mH_range (a mass measurement, not scored). Each dataset holds
 data/events.npz (the pseudo-data: two leptons, missing ET, jets; no labels), mc/pool.npz and mc/pool_meta.json
 (the pool, hard-linked), and truth.json. manifest.json lists the truths. --design fixes truths per sealed seed
 (a JSON list of dicts; unset keys are drawn). The sealed suite is made the same way with a seed you don't have.
@@ -22,9 +22,11 @@ import numpy as np
 import hww as H
 
 PRIORS = {"mH_range": [100.0, 150.0], "mu_range": [0.0, 3.0], "null_fraction": 0.2, "bkg_norm_range": [0.9, 1.1],
-          "fixed_mass_fraction": 0.5, "fixed_mass_range": [123.0, 127.0]}   # score_suite.MASS_FIXED_RANGE is the same window
+          "fixed_mass_fraction": 1.0, "fixed_mass_range": [123.0, 127.0]}   # score_suite.MASS_FIXED_RANGE is the same window
+# fixed_mass_fraction: 0.5 made half of the drawn datasets move the mass over mH_range for a table with the mass; the
+# leaderboard scores mu alone at the 125 GeV mass now, so every dataset keeps it there
 PUBLIC_TRUTH = {"mH": 125.0, "mu": 1.0, "bkg_norm": 1.0, "mass_fixed": True}
-RECIPE = 2   # bump it when the way a suite is drawn changes: the sealed run's result cache is keyed on it
+RECIPE = 3   # bump it when the way a suite is drawn changes: the sealed run's result cache is keyed on it
 DEFAULT_POOL = Path(__file__).resolve().parent / "datasets" / "public" / "seed_000" / "mc" / "pool.npz"
 
 

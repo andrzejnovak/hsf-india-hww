@@ -3,8 +3,8 @@
 # plan reads the issue (and replies to a comment with a URL in it but no `<team>: <url> @ <commit>` line, which
 # would otherwise be skipped in silence) and decides who needs a run; score runs once per such team, each on a
 # runner of its own, building the same suite from the secret and scoring that team alone; publish gathers the
-# runners' results with the cache for everyone else and commits the tables and the plots: the README's table scores
-# mu on the fixed-mass datasets, LEADERBOARD_MASS.md's mu and the mass on every dataset.
+# runners' results with the cache for everyone else and commits the table and the plots: mu on the sealed datasets,
+# all at the 125 GeV mass.
 # With the SEALED_SEED repository secret (Settings > Secrets and variables > Actions; any long random string, e.g.
 # python3 -c 'import secrets; print(secrets.token_hex(16))') the suite is the same every run, so results are
 # comparable and a team whose commit was scored before is read from results/cache instead of re-run; without it
@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       n:
-        description: "datasets in the sealed suite (public seed_000 included; half of the drawn ones keep the mass at 125)"
+        description: "datasets in the sealed suite (public seed_000 included), all at the 125 GeV mass"
         default: "51"
       plots:
         description: "publish each team's recovery plot too (they show the planted values of the sealed datasets)"
@@ -159,7 +159,7 @@ jobs:
         run: |
           git config user.name "sealed run"
           git config user.email "actions@users.noreply.github.com"
-          mkdir -p results && git add README.md LEADERBOARD_MASS.md results
+          mkdir -p results && git add README.md results
           git diff --cached --quiet && { echo "nothing changed"; exit 0; }
           git commit -q -m "Hackathon leaderboard: sealed run of $(date -u +'%Y-%m-%d %H:%M') UTC"
           for i in 1 2 3; do

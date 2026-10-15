@@ -56,19 +56,17 @@ are allowed and ignored.
 
 ## 3. How you are scored (aggregate metrics only)
 
-Across the sealed suite, for `mu` (and for `mH` where you report it on every scored dataset: a bonus,
-never a penalty).  The leaderboard's main table scores `mu` on the datasets whose planted mass stays
-within 2 GeV of 125 (half of the suite); LEADERBOARD_MASS.md scores `mu` and `mH` on every dataset:
+Across the sealed suite, for `mu` (and for `mH` where you report it, for the record: never a penalty).
+Every sealed dataset plants its own `mu` and background rate and keeps the mass within 2 GeV of 125:
 
 - **sensitivity** — slope of recovered vs injected value (unit slope = faithful
   measurement; a constant output scores zero).  Gate.
 - **bias** — mean pull `(value − truth) / total`.
 - **calibration** — width of the pull distribution using YOUR quoted `total`;
   both under- and over-coverage fail.
-- **precision** — the calibrated error, the mean `total` you quote times the
-  pull width where that is above 1; the leaderboard's score is 100 × the
-  reference pipeline's (the kit's template fit) calibrated error over yours,
-  and its order.
+- **precision** — the mean `total` you quote; the leaderboard's sensitivity is
+  the reference pipeline's (the kit's template fit) over yours, its robustness
+  1 over your pull width where that is above 1.
 - **recovery** — fraction of datasets that complete with a valid result.
 - **false-discovery rate** — fraction of no-signal datasets on which you claim
   discovery.
@@ -76,9 +74,8 @@ within 2 GeV of 125 (half of the suite); LEADERBOARD_MASS.md scores `mu` and `mH
 - **discovery power** — fraction of strong-signal datasets on which you claim
   discovery.
 
-The leaderboard's score is `100 × σ_ref,cal / σ_cal`: the reference pipeline's
-calibrated error over yours, `mu` alone on the README (the fixed-mass datasets),
-averaged with `mH` where you report it on the mass page (every dataset).
+The leaderboard's score is `100 × sensitivity × robustness` on `mu`; the
+reference pipeline with honest error bars scores 100.
 Pulls and slopes use only datasets whose injected signal has expected local
 significance ≥ 5 (a truth-based rule, the same for every submission); null
 datasets enter the false-discovery rate.  You receive these aggregates; never
