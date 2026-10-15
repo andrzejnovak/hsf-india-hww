@@ -15,9 +15,10 @@ beside it (results/<team>.png) and links it in a folded block, a cached team kee
 with that in mind (CI does, every run). --fresh ignores the cache and scores everyone again: the final run.
 
 Submissions are the comments on the submissions issue (--issue, default 1 of andrzejnovak/hsf-india-hww,
-read through the public GitHub API with no token), one line each: `<team>: <git url> @ <commit>`; every
-submission, a team and a commit, is scored once and kept: the latest per team is its row of the table, the
-others are in a collapsed table under it. --notify (CI) replies to a comment with a URL in it but no such line, which is otherwise
+read through the public GitHub API with no token), one line each: `<team>: <git url> @ <commit>`; each
+team's latest submission, a team and a commit, is scored once and kept: it is the team's row of the table, and
+when a newer one replaces it, it moves to a collapsed table under it with the score it had. A commit that was
+never a team's latest at a run (replaced before it ran) is not scored: the ledger starts when it is kept. --notify (CI) replies to a comment with a URL in it but no such line, which is otherwise
 skipped in silence (a team name with a space, say). --teams FILE reads the same lines from a file instead (a
 hand-made list, or the issue copied over). Each repository is cloned into <out>/submissions/<team>@<commit>/ and checked out at that commit; the
 submission is its submission/ directory (or its root when run.sh is there).
@@ -458,7 +459,7 @@ def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None,
             + (f"; μ scored on the {k} whose mass stays at 125. With the mass, on all {n}: [{MASS_PAGE}]({MASS_PAGE})." if MASS_PAGE else ".") + "_",
             "", table_main(entries)]
     if history:
-        main += ["", "<details>", f"<summary><b>Earlier submissions</b> ({len(history)}): by team, newest first, scored the same way</summary>", "",
+        main += ["", "<details>", f"<summary><b>Earlier submissions</b> ({len(history)}): by team, newest first, with the score each had</summary>", "",
                  table_history(entries, history), "", "</details>"]
     mass = [f"_Sealed run of {when}: μ and the mass on all {n} sealed datasets, the mass moving between 100 and 150 GeV; "
             f"μ alone on the {k} fixed-mass datasets: the [README](README.md)._",
@@ -613,14 +614,15 @@ def repo_cache(a, key, log):
 
 
 def stage_plan(a, latest, subs, key, log):
-    """CI: every submission and which of them need a run on a runner of their own; the rest come from the cache
-    at publish. Written to --plan-out for the other stages."""
+    """CI: each team's latest submission that needs a run on a runner of its own; the rest come from the cache at
+    publish, and an earlier submission is never scored (it shows only if it was scored while it was the latest).
+    Written to --plan-out for the other stages."""
     if not a.plan_out:
         raise SystemExit("--stage plan needs --plan-out")
     cache = repo_cache(a, key, log)
-    todo = [k for k, e in subs.items() if a.fresh or cached(cache, e, a.n, key) is None]
+    todo = [sub_key(e) for e in latest.values() if a.fresh or cached(cache, e, a.n, key) is None]
     Path(a.plan_out).write_text(json.dumps({"teams": latest, "subs": subs, "todo": todo, "n": a.n}, indent=1))
-    log(f"plan: {len(todo)} of {len(subs)} submissions to score ({', '.join(todo) or 'none'}), the rest from the cache; written to {a.plan_out}")
+    log(f"plan: {len(todo)} of {len(latest)} latest submissions to score ({', '.join(todo) or 'none'}), the rest from the cache; written to {a.plan_out}")
 
 
 def stage_score(a, out: Path, log):
@@ -639,10 +641,10 @@ def stage_score(a, out: Path, log):
 
 
 def gather(latest, subs, by_key):
-    """(the table: each team's latest submission, the earlier ones), each with when it was posted."""
+    """(the table: each team's latest submission, the earlier ones that have a result), each with when it was posted."""
     current = {sub_key(e) for e in latest.values()}
     main = [dict(by_key[sub_key(e)], posted=e["submitted"]) for e in latest.values()]
-    history = [dict(by_key[k], posted=e["submitted"]) for k, e in subs.items() if k not in current]
+    history = [dict(by_key[k], posted=e["submitted"]) for k, e in subs.items() if k not in current and k in by_key]
     return main, history
 
 
@@ -655,8 +657,13 @@ def stage_publish(a, out: Path, log):
     cache = repo_cache(a, key, log)
     migrate_cache(cache)
     results = out / "results"; results.mkdir(parents=True, exist_ok=True)
-    by_key = {}
+    by_key, current = {}, {sub_key(e) for e in latest.values()}
     for k, entry in subs.items():
+        if k not in current:                      # an earlier submission: its result from when it was the latest, or nothing
+            c = cached(cache, entry, a.n, key)
+            if c is not None:
+                c["rows"] = []; by_key[k] = c
+            continue
         f = cache_file(out / "cache", entry)
         got = json.loads(f.read_text()) if f.is_file() else None
         if got is not None and str(got.get("commit", ""))[:7] == entry["commit"][:7]:
@@ -726,12 +733,16 @@ def main():
     migrate_cache(cache)
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=max(1, a.jobs)) as pool:
-        futures = {k: pool.submit(score_team, e, a, out, suite, truths, cache, key) for k, e in subs.items()}
+        futures = {sub_key(e): pool.submit(score_team, e, a, out, suite, truths, cache, key) for e in latest.values()}
         by_key = {}
         for k, fut in futures.items():
             e, lines = fut.result()
             log("\n" + "\n".join(lines))
             by_key[k] = e
+    for k, e in subs.items():                     # earlier submissions: their result from when they were the latest
+        c = None if k in by_key else cached(cache, e, a.n, key)
+        if c is not None:
+            c["rows"] = []; by_key[k] = c
     main, history = gather(latest, subs, by_key)
     leaderboard(main, results / "leaderboard.md", results / "leaderboard.json", log, history)
     if a.publish:

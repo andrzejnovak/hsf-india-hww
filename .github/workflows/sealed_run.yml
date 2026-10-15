@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sub: ${{ fromJSON(needs.plan.outputs.todo) }}   # <team>@<commit>, every submission not in the cache
+        sub: ${{ fromJSON(needs.plan.outputs.todo) }}   # <team>@<commit>: each team's latest submission not in the cache
     runs-on: ubuntu-latest
     timeout-minutes: 100   # the suite, the self-check (two runs of the public dataset) and the 60-minute budget
     steps:
@@ -125,7 +125,7 @@ jobs:
 
   publish:
     needs: [plan, score]
-    if: always() && needs.plan.result == 'success'
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}   # also when a scoring job failed, never when the run is cancelled
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
