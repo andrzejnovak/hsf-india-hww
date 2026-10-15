@@ -123,6 +123,20 @@ def remember(cache: Path, e, n: int, key: str, force: bool = False):
     (cache / f"{e['team']}.json").write_text(json.dumps(keep, indent=1, default=str))
 
 
+def reference_errors(cache):
+    """The REFERENCE team's mean error bars per POI from the leaderboard's cache, for the plots' sensitivity row:
+    {"main": {poi: err}, "full": {poi: err}}, empty without a cache entry (the plots then compare with the
+    team's own mean)."""
+    f = cache / f"{REFERENCE}.json" if cache is not None else None
+    if f is None or not f.is_file():
+        return {}
+    try:
+        c = json.loads(f.read_text())
+        return {which: {poi: a["err"] for poi, a in c[which]["pois"].items() if a and a.get("err")} for which in ("main", "full") if which in c}
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return {}
+
+
 def not_run(team, entry, why):
     """A level-0 entry for a team that produced no result: not fetched, or its runner did not finish. Never cached
     (fetched: False), so the next run tries again."""
@@ -160,9 +174,10 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
     (res / "score.json").write_text(json.dumps(r, indent=1, default=str))
     log("main table, mu on the datasets whose mass stays at 125 GeV:"); S.report(r["agg_main"], log)
     log("with the mass, every dataset:"); S.report(r["agg"], log)
-    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run, with the mass"):
+    ref = reference_errors(cache if cache is not None else repo_cache(a, key, lambda s: None))
+    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run, with the mass", ref_err=ref.get("full")):
         log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
-    S.plot(r["rows"], res / "recovery_mu.png", title=f"{team} — sealed run", which="main")
+    S.plot(r["rows"], res / "recovery_mu.png", title=f"{team} — sealed run", which="main", ref_err=ref.get("main"))
     e = {"team": team, "check_ok": check_ok, "submitted": submitted, "main": r["agg_main"], "full": r["agg"],
          "level": level(r["agg_main"], check_ok), "distance": distance(r["agg_main"]), "rows": r["rows"],
          "url": entry["url"], "commit": entry["commit"],

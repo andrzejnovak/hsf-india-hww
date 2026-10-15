@@ -208,15 +208,15 @@ def report(agg, log=print):
         log(f"  discovery power: {agg['power']:.2f} ({agg['discoveries']} of {agg['n_strong']} strong seeds claimed)")
 
 
-def plot(rows, path, title=None, which="full"):
-    """The recovery plot, reported against planted, every scored dataset coloured by how far it sits from the
-    truth in units of its own error bar (|pull|: green within one error bar, red at three or more), which is what
-    inflates the pull width and bends the slope. which="main": the mu panel alone, on the fixed-mass datasets the
-    leaderboard scores (every one of a suite as shipped); "full": every reported POI on every dataset, filled
-    markers the fixed-mass datasets, hollow any moving-mass ones. Small grey: weak or null,
-    outside the slope and the pulls. Each panel's title carries the level with the slope and pull width behind it,
-    and the mean error bar: the precision of the analysis, the number to push down once the pulls are honest.
-    Returns False without matplotlib."""
+def plot(rows, path, title=None, which="full", ref_err=None):
+    """Two rows of panels per POI. Top: reported against planted, every scored dataset coloured by how far it
+    sits from the truth in units of its own error bar (|pull|: green within one error bar, red at three or more),
+    where robustness is lost. Bottom: the error bar quoted on each dataset against the reference's mean error bar
+    (ref_err, a dict per POI: the template fit's, from the leaderboard's cache; the team's own mean without it),
+    coloured by the ratio (green: tighter than the reference, red: twice as wide or more), where sensitivity is
+    lost. which="main": mu alone on the fixed-mass datasets the leaderboard scores; "full": every reported POI
+    on every dataset, filled markers the fixed-mass datasets, hollow any moving-mass ones. Small grey: weak or
+    null, outside the score. Returns False without matplotlib."""
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -230,35 +230,45 @@ def plot(rows, path, title=None, which="full"):
     names = ["mu"] if main else ([p for p in ALL_POIS if any(p in r for r in ok)] or ["mu"])
     agg = aggregate(rows, mass_fixed, POIS) if main else aggregate(rows)
     where = "the fixed-mass datasets" if main else "every dataset"
-    cmap, norm = plt.get_cmap("RdYlGn_r"), Normalize(0.0, 3.0)
-    fig, axes = plt.subplots(1, len(names), figsize=(5.8 * len(names), 4.9), squeeze=False, constrained_layout=True)
-    for ax, name in zip(axes[0], names):
-        unit = UNITS.get(name, "")
-        for r in ok:
-            if name not in r:
-                continue
-            strong = r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
-            if strong:
-                c = cmap(norm(abs(r[f"pull_{name}"])))
-                ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=5.5, capsize=2, color=c, ecolor=c,
-                            mec=c, mfc=c if (main or mass_fixed(r["truth"])) else "none", mew=1.4, alpha=0.95, zorder=3)
-            else:
-                ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=3.5, capsize=1.5, color="0.65", alpha=0.6, zorder=2)
-        lo, hi = ax.get_xlim()
-        ax.plot([lo, hi], [lo, hi], "k--", lw=1, label="reported = planted", zorder=1)
-        ax.set_xlim(lo, hi)
-        ax.set_xlabel(f"planted {name}{unit}"); ax.set_ylabel(f"reported {name}{unit}")
-        ax.legend(loc="upper left", frameon=False)
+    cmap = plt.get_cmap("RdYlGn_r")
+    pull_norm, unc_norm = Normalize(0.0, 3.0), Normalize(0.5, 2.0)
+    fig, axes = plt.subplots(2, len(names), figsize=(6.2 * len(names), 8.6), squeeze=False, constrained_layout=True,
+                             gridspec_kw={"height_ratios": [1.0, 0.75]})
+    for col, name in enumerate(names):
+        top, bot = axes[0][col], axes[1][col]
+        unit = UNITS.get(name, ""); u = unit.strip(" []")
         p = agg["pois"].get(name)
-        sel = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
-        u = unit.strip(" []")
-        ax.set_title((f"level {level_of(agg, name)}: slope {p['slope']:.2f}, pull width {p['width']:.2f}" if p else "no slope: not scored")
-                     + f" on {where}\n" + (f"mean error bar {p['err']:.2f}{u}, calibrated {p['err_cal']:.2f}{u}" if p else "no error bar")
-                     + f" over {len(sel)} scored datasets", fontsize=9)
-    sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
-    fig.colorbar(sm, ax=axes[0].tolist(), fraction=0.035, pad=0.02, label="|reported − planted| / your error bar")
-    note = ("the datasets the README's table scores: mass at 125 GeV; grey: weak or null, not scored" if main else
-            "filled: mass at 125 (the leaderboard), hollow: mass moving; grey: weak or null, not scored")
+        strong = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
+        weak = [r for r in ok if name in r and r not in strong]
+        ref = (ref_err or {}).get(name) or (p and p.get("err"))
+        for r in weak:
+            top.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=3.5, capsize=1.5, color="0.65", alpha=0.6, zorder=2)
+            bot.plot(r["truth"][name], r[f"{name}_e"], "o", ms=3.5, color="0.65", alpha=0.6, zorder=2)
+        for r in strong:
+            filled = main or mass_fixed(r["truth"])
+            c = cmap(pull_norm(abs(r[f"pull_{name}"])))
+            top.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=5.5, capsize=2, color=c, ecolor=c,
+                         mec=c, mfc=c if filled else "none", mew=1.4, alpha=0.95, zorder=3)
+            cu = cmap(unc_norm(r[f"{name}_e"] / ref)) if ref else "C0"
+            bot.plot(r["truth"][name], r[f"{name}_e"], "o", ms=5.5, color=cu, mec=cu, mfc=cu if filled else "none", mew=1.4, alpha=0.95, zorder=3)
+        lo, hi = top.get_xlim()
+        top.plot([lo, hi], [lo, hi], "k--", lw=1, label="reported = planted", zorder=1)
+        top.set_xlim(lo, hi); bot.set_xlim(lo, hi)
+        top.set_ylabel(f"reported {name}{unit}"); top.legend(loc="upper left", frameon=False)
+        if ref:
+            bot.axhline(ref, color="k", ls="--", lw=1, label=("the template fit's mean error bar" if ref_err and ref_err.get(name) else "your mean error bar"))
+            bot.legend(loc="upper left", frameon=False, fontsize=8)
+        bot.set_ylim(bottom=0)
+        bot.set_xlabel(f"planted {name}{unit}"); bot.set_ylabel(f"error bar on {name}{unit}")
+        sens = f"sensitivity {ref_err[name] / p['err']:.2f}" if (p and ref_err and ref_err.get(name)) else (f"mean error bar {p['err']:.2f}{u}" if p else "no error bar")
+        rob = f"robustness {1 / max(1.0, p['width']):.2f} (pull width {p['width']:.2f})" if p else "no pulls"
+        top.set_title((f"{rob}, slope {p['slope']:.2f}" if p else "not scored") + f" on {where}, {len(strong)} datasets", fontsize=9)
+        bot.set_title(sens + (f": σ {p['err']:.2f}{u} against the template fit's {ref_err[name]:.2f}{u}" if (p and ref_err and ref_err.get(name)) else ""), fontsize=9)
+    for row, norm, label in ((0, pull_norm, "|reported − planted| / your error bar"), (1, unc_norm, "your error bar / the reference's mean")):
+        sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
+        fig.colorbar(sm, ax=axes[row].tolist(), fraction=0.04, pad=0.02, label=label)
+    note = ("top: robustness, bottom: sensitivity; grey: weak or null, not scored" if main else
+            "top: robustness, bottom: sensitivity; filled: mass at 125, hollow: mass moving; grey: not scored")
     fig.suptitle((title + "\n" if title else "") + note, fontsize=10 if title else 9)
     fig.savefig(path, dpi=130); plt.close(fig)
     return True

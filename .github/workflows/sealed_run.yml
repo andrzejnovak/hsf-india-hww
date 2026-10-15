@@ -112,7 +112,7 @@ jobs:
           SEALED_SEED: ${{ secrets.SEALED_SEED }}     # the same suite as every other runner; dropped before the submission runs
         run: |
           python organiser/sealed_run.py --stage score --plan /tmp/plan.json --team "${{ matrix.team }}" --out /tmp/sealed --as nobody \
-            --team-budget 3600 --n "$N" $SEED_ARG
+            --publish README.md --team-budget 3600 --n "$N" $SEED_ARG   # --publish only locates results/cache: the template fit's error bars, for the plot
       - uses: actions/upload-artifact@v4
         if: always()
         with:
