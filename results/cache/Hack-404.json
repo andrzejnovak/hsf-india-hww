@@ -1,0 +1,60 @@
+{
+ "team": "Hack-404",
+ "check_ok": true,
+ "submitted": "0909838 (2026-10-15T07:18:42Z by shaurya-cd)",
+ "main": {
+  "n": 31,
+  "n_ok": 31,
+  "recovery": 1.0,
+  "selection": "the datasets whose mass stays at 125 GeV",
+  "n_picked": 16,
+  "n_strong": 13,
+  "n_null": 2,
+  "pois": {
+   "mu": {
+    "slope": 1.0623166157105195,
+    "bias": 0.4327137025178868,
+    "width": 1.009793971525772,
+    "verdict": "OK"
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 13,
+  "power": 1.0
+ },
+ "full": {
+  "n": 31,
+  "n_ok": 31,
+  "recovery": 1.0,
+  "selection": "every dataset",
+  "n_picked": 31,
+  "n_strong": 20,
+  "n_null": 10,
+  "pois": {
+   "mu": {
+    "slope": 1.0297764271042824,
+    "bias": 0.37099267156450094,
+    "width": 0.9137279336861588,
+    "verdict": "OK"
+   },
+   "mH": {
+    "slope": 0.9868061870242165,
+    "bias": -0.11401432613408251,
+    "width": 1.2444908570464983,
+    "verdict": "OK"
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 20,
+  "power": 1.0
+ },
+ "level": 2,
+ "distance": 0.07206293716684109,
+ "url": "https://github.com/shaurya-cd/Hack-404.git",
+ "commit": "0909838",
+ "scored_at": "2026-10-15T07:29:27Z",
+ "n": 31,
+ "key": "5029bdffb576"
+}

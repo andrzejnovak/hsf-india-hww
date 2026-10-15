@@ -50,16 +50,17 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 07:21 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 07:29 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Each team's recovery plot, reported against planted and coloured by the pull, is folded at the bottom. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
 
 | # | team          | level | slope μ | pull width μ | false disc. | self-check | submitted                                         |
 |---|---------------|-------|---------|--------------|-------------|------------|---------------------------------------------------|
-| 1 | thursday-demo | 2     | 1.07    | 1.12         | 0/2         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
-| 2 | baseline-mt   | 2     | 1.05    | 1.15         | 0/2         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
-| 3 | Horizon       | 2     | 1.05    | 1.15         | 0/2         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
-| 4 | Pilots        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953)  |
-| 5 | team_x        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31) |
-| 6 | baseline-nn   | 2     | 1.06    | 1.14         | 0/2         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
+| 1 | Hack-404      | 2     | 1.06    | 1.01         | 0/2         | PASS       | 0909838 (2026-10-15T07:18:42Z by shaurya-cd)      |
+| 2 | thursday-demo | 2     | 1.07    | 1.12         | 0/2         | PASS       | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
+| 3 | baseline-mt   | 2     | 1.05    | 1.15         | 0/2         | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
+| 4 | Horizon       | 2     | 1.05    | 1.15         | 0/2         | PASS       | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
+| 5 | Pilots        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953)  |
+| 6 | team_x        | 2     | 1.05    | 1.15         | 0/2         | PASS       | 4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31) |
+| 7 | baseline-nn   | 2     | 1.06    | 1.14         | 0/2         | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
 
 <details>
 <summary><b>With the mass</b>: μ and the mass on every dataset, the mass moving</summary>
@@ -71,12 +72,17 @@ _Sealed run of 2026-10-15 07:21 UTC: 31 datasets nobody has seen, every submissi
 | 3 | Pilots        | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 3be629b (2026-10-15T06:57:34Z by ishandhull2953)  |
 | 4 | team_x        | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31) |
 | 5 | baseline-mt   | 2       | 2          | 1.02    | 1.07         | 0.95       | 1.39            | 0/10        | PASS       | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
-| 6 | baseline-nn   | 2       | 2          | 1.02    | 1.20         | 0.98       | 1.37            | 0/10        | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
+| 6 | Hack-404      | 2       | 2          | 1.03    | 0.91         | 0.99       | 1.24            | 0/10        | PASS       | 0909838 (2026-10-15T07:18:42Z by shaurya-cd)      |
+| 7 | baseline-nn   | 2       | 2          | 1.02    | 1.20         | 0.98       | 1.37            | 0/10        | PASS       | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
 
 </details>
 
 <details>
 <summary><b>Recovery plots</b>, per team: reported against planted on the sealed datasets, each point coloured by how far it sits from the truth in units of its own error bar</summary>
+
+**Hack-404** (level 2)
+
+![Hack-404](results/Hack-404.png)
 
 **thursday-demo** (level 2)
 
