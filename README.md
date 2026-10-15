@@ -99,21 +99,21 @@ _Sealed run of 2026-10-15 09:00 UTC: every submission on the [issue](https://git
 ### Reading the table
 
 Every team's last submitted commit, on the same sealed datasets each run. Each dataset has its own planted
-signal strength μ and background rate, and the Higgs mass at 125 GeV (within 2 GeV): a measurement of μ at a known
-mass. The mass you report (optional in RESULT.json) is for the record, not scored.
+signal strength μ and background rate, and the Higgs mass at 125 GeV: a measurement of μ at a known mass. The
+mass you report (optional in RESULT.json) is for the record, not scored.
 
-- **score** = 100 × **sensitivity** × **robustness**, the order of the table. The template fit, `baseline-mt`,
-  with honest error bars would score 100.
-- **sensitivity**: the template fit's error bar on μ over yours, averaged over the scored datasets (**σ μ** is
-  yours). Bigger means a tighter measurement.
-- **robustness**: 1 over your pull width where that is above 1. The pulls are (reported − planted) / σ, and
-  their spread (**pull width μ**) is 1 when the error bars are honest, so robustness 1.00 is honest; a wrong
-  slope, a bias, or error bars smaller than the measurement supports all widen the pulls and lower it. Shrinking
-  σ alone moves nothing: what it gains in sensitivity it loses in robustness.
-- **slope μ**: a line through reported against planted; 1 is a measurement, 0 a constant.
+- **score** = 100 × **precision** × **honesty**, the order of the table.
+- **precision**: how close you land. Your miss on a dataset is reported μ − planted μ, and your **typical miss**
+  is its root-mean-square over the scored datasets. Precision is the template fit's typical miss over yours:
+  1.20 means you land 20 % closer. A bias or a wrong slope makes you miss by more, so it costs here.
+- **honesty**: whether your error bars (**σ μ**) match your misses. The **pull width** is the spread of
+  miss / σ, and is 1 when they match. Honesty is the pull width or its inverse, whichever is below 1: error bars
+  20 % too small or 20 % too big both give about 0.8.
+- The template fit, `baseline-mt`, has precision 1.00 by definition, so its score is 100 × its honesty.
 
-Each team's plot, reported against planted on the scored datasets and coloured by the pull, is folded under
-the table. Yours, on datasets you make: `python3 make_suite.py suites/mine --n 10 --seed 7`, then
+Each team's plot is folded under the table: honesty on top, each dataset coloured by its pull, and precision
+below, each miss against the template fit's typical miss. Yours, on datasets you make:
+`python3 make_suite.py suites/mine --n 10 --seed 7`, then
 `python3 score_suite.py ~/hack-<team>/submission suites/mine --plot-main mu.png`. The sealed plots show the
 planted values: for seeing where your score is lost, not for fitting a correction to (a hard-coded answer,
 against the rules). The three levels of the [GUIDE](GUIDE.md) are milestones for when you present, not columns here.

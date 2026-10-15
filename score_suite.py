@@ -164,10 +164,11 @@ def aggregate(rows, pick=None, pois=ALL_POIS, selection="every dataset"):
         width = float(np.sqrt(np.mean(pulls ** 2)))
         verdict = ("OK" if WIDTH_OK[0] <= width <= WIDTH_OK[1] else
                    ("UNDER-covering: error bars too small" if width > WIDTH_OK[1] else "OVER-covering: error bars too large"))
+        miss = float(np.sqrt(np.mean((y - x) ** 2)))                     # the typical miss: how close you land
         err = float(np.mean([r[f"{name}_e"] for r in have]))              # the mean error bar quoted
         err_cal = err * max(1.0, width) if math.isfinite(width) else float("nan")   # what it would have to be to be honest
         agg["pois"][name] = {"slope": slope, "bias": float(pulls.mean()), "width": width, "verdict": verdict,
-                             "err": err, "err_cal": err_cal}
+                             "miss": miss, "err": err, "err_cal": err_cal}
     agg["false_discoveries"] = sum(r["disc"] for r in null)
     agg["fdr"] = agg["false_discoveries"] / len(null) if null else None
     agg["discoveries"] = sum(r["disc"] for r in strong)
@@ -199,7 +200,9 @@ def report(agg, log=print):
             continue
         log(f"  {name}: sensitivity slope {a['slope']:5.2f} (1 = faithful, 0 = constant) | bias (mean pull) {a['bias']:+5.2f} "
             f"| calibration (pull RMS) {a['width']:4.2f} -> {a['verdict']}")
-        log(f"  {name}: mean error bar {a['err']:.3g}, calibrated {a['err_cal']:.3g} (times the pull width above 1: the leaderboard's precision)")
+        hon = min(a["width"], 1.0 / a["width"]) if a["width"] > 0 else 0.0
+        log(f"  {name}: typical miss {a['miss']:.3g} (RMS of reported - planted; precision is the template fit's over it) | "
+            f"mean error bar {a['err']:.3g} | honesty {hon:.2f} (the pull width or its inverse, whichever is below 1)")
     if agg["fdr"] is not None:
         log(f"  false-discovery rate: {agg['fdr']:.2f} ({agg['false_discoveries']} of {agg['n_null']} null seeds claimed)")
     log(f"  level: {level_of(agg)} on mu" + (f", {level_of(agg, 'mH')} on the mass (optional)" if agg["pois"].get("mH") else
@@ -208,15 +211,15 @@ def report(agg, log=print):
         log(f"  discovery power: {agg['power']:.2f} ({agg['discoveries']} of {agg['n_strong']} strong seeds claimed)")
 
 
-def plot(rows, path, title=None, which="full", ref_err=None):
-    """Two rows of panels per POI. Top: reported against planted, every scored dataset coloured by how far it
-    sits from the truth in units of its own error bar (|pull|: green within one error bar, red at three or more),
-    where robustness is lost. Bottom: the error bar quoted on each dataset against the reference's mean error bar
-    (ref_err, a dict per POI: the template fit's, from the leaderboard's cache; the team's own mean without it),
-    coloured by the ratio (green: tighter than the reference, red: twice as wide or more), where sensitivity is
-    lost. which="main": mu alone on the fixed-mass datasets the leaderboard scores; "full": every reported POI
-    on every dataset, filled markers the fixed-mass datasets, hollow any moving-mass ones. Small grey: weak or
-    null, outside the score. Returns False without matplotlib."""
+def plot(rows, path, title=None, which="full", ref=None):
+    """The leaderboard's two factors, a row each, a column per POI. Top, honesty: reported against planted, every
+    scored dataset coloured by its pull, |reported - planted| over the error bar quoted (green within one error
+    bar, red at three or more). Bottom, precision: the miss, reported - planted, on each dataset with the error bar
+    quoted, the grey band the reference's typical miss (ref: {poi: aggregate}, the template fit's on the
+    leaderboard; your own without it), coloured by |miss| over it (green inside, red at twice or more).
+    which="main": mu alone on the fixed-mass datasets the leaderboard scores; "full": every reported POI on every
+    dataset, filled markers the fixed-mass datasets, hollow any moving-mass ones. Small grey points: weak or null,
+    not scored. Returns False without matplotlib."""
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -231,44 +234,56 @@ def plot(rows, path, title=None, which="full", ref_err=None):
     agg = aggregate(rows, mass_fixed, POIS) if main else aggregate(rows)
     where = "the fixed-mass datasets" if main else "every dataset"
     cmap = plt.get_cmap("RdYlGn_r")
-    pull_norm, unc_norm = Normalize(0.0, 3.0), Normalize(0.5, 2.0)
+    pull_norm, miss_norm = Normalize(0.0, 3.0), Normalize(0.0, 2.0)
     fig, axes = plt.subplots(2, len(names), figsize=(6.2 * len(names), 8.6), squeeze=False, constrained_layout=True,
                              gridspec_kw={"height_ratios": [1.0, 0.75]})
+    own_ref = True
     for col, name in enumerate(names):
         top, bot = axes[0][col], axes[1][col]
         unit = UNITS.get(name, ""); u = unit.strip(" []")
         p = agg["pois"].get(name)
         strong = [r for r in ok if name in r and r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
         weak = [r for r in ok if name in r and r not in strong]
-        ref = (ref_err or {}).get(name) or (p and p.get("err"))
+        ref_miss = ((ref or {}).get(name) or {}).get("miss")
+        own_ref = not ref_miss
+        if own_ref:
+            ref_miss = p and p.get("miss")
         for r in weak:
+            d = r[name] - r["truth"][name]
             top.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=3.5, capsize=1.5, color="0.65", alpha=0.6, zorder=2)
-            bot.plot(r["truth"][name], r[f"{name}_e"], "o", ms=3.5, color="0.65", alpha=0.6, zorder=2)
+            bot.errorbar(r["truth"][name], d, yerr=r[f"{name}_e"], fmt="o", ms=3.5, capsize=1.5, color="0.65", alpha=0.6, zorder=2)
         for r in strong:
             filled = main or mass_fixed(r["truth"])
+            d = r[name] - r["truth"][name]
             c = cmap(pull_norm(abs(r[f"pull_{name}"])))
             top.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=5.5, capsize=2, color=c, ecolor=c,
                          mec=c, mfc=c if filled else "none", mew=1.4, alpha=0.95, zorder=3)
-            cu = cmap(unc_norm(r[f"{name}_e"] / ref)) if ref else "C0"
-            bot.plot(r["truth"][name], r[f"{name}_e"], "o", ms=5.5, color=cu, mec=cu, mfc=cu if filled else "none", mew=1.4, alpha=0.95, zorder=3)
+            cm = cmap(miss_norm(abs(d) / ref_miss)) if ref_miss else "C0"
+            bot.errorbar(r["truth"][name], d, yerr=r[f"{name}_e"], fmt="o", ms=5.5, capsize=2, color=cm, ecolor=cm,
+                         mec=cm, mfc=cm if filled else "none", mew=1.4, alpha=0.95, zorder=3)
         lo, hi = top.get_xlim()
         top.plot([lo, hi], [lo, hi], "k--", lw=1, label="reported = planted", zorder=1)
         top.set_xlim(lo, hi); bot.set_xlim(lo, hi)
         top.set_ylabel(f"reported {name}{unit}"); top.legend(loc="upper left", frameon=False)
-        if ref:
-            bot.axhline(ref, color="k", ls="--", lw=1, label=("the template fit's mean error bar" if ref_err and ref_err.get(name) else "your mean error bar"))
+        bot.axhline(0.0, color="k", lw=0.8, zorder=1)
+        if ref_miss:
+            bot.axhspan(-ref_miss, ref_miss, color="0.8", alpha=0.5, zorder=0,
+                        label="your typical miss" if own_ref else "the template fit's typical miss")
             bot.legend(loc="upper left", frameon=False, fontsize=8)
-        bot.set_ylim(bottom=0)
-        bot.set_xlabel(f"planted {name}{unit}"); bot.set_ylabel(f"error bar on {name}{unit}")
-        sens = f"sensitivity {ref_err[name] / p['err']:.2f}" if (p and ref_err and ref_err.get(name)) else (f"mean error bar {p['err']:.2f}{u}" if p else "no error bar")
-        rob = f"robustness {1 / max(1.0, p['width']):.2f} (pull width {p['width']:.2f})" if p else "no pulls"
-        top.set_title((f"{rob}, slope {p['slope']:.2f}" if p else "not scored") + f" on {where}, {len(strong)} datasets", fontsize=9)
-        bot.set_title(sens + (f": σ {p['err']:.2f}{u} against the template fit's {ref_err[name]:.2f}{u}" if (p and ref_err and ref_err.get(name)) else ""), fontsize=9)
-    for row, norm, label in ((0, pull_norm, "|reported − planted| / your error bar"), (1, unc_norm, "your error bar / the reference's mean")):
+        bot.set_xlabel(f"planted {name}{unit}"); bot.set_ylabel(f"miss: reported − planted {name}{unit}")
+        if p:
+            hon = min(p["width"], 1.0 / p["width"]) if p["width"] > 0 else 0.0
+            top.set_title(f"honesty {hon:.2f} (pull width {p['width']:.2f}), slope {p['slope']:.2f} on {where}, {len(strong)} datasets", fontsize=9)
+            prec = f": precision {ref_miss / p['miss']:.2f}" if (not own_ref and p["miss"] > 0) else ""
+            bot.set_title(f"typical miss {p['miss']:.3f}{u}" + ("" if own_ref else f", the template fit's {ref_miss:.3f}{u}") + prec, fontsize=9)
+        else:
+            top.set_title("not scored", fontsize=9)
+    for row, norm, label in ((0, pull_norm, "|miss| / your error bar"),
+                             (1, miss_norm, "|miss| / " + ("your typical miss" if own_ref else "the template fit's typical miss"))):
         sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
         fig.colorbar(sm, ax=axes[row].tolist(), fraction=0.04, pad=0.02, label=label)
-    note = ("top: robustness, bottom: sensitivity; grey: weak or null, not scored" if main else
-            "top: robustness, bottom: sensitivity; filled: mass at 125, hollow: mass moving; grey: not scored")
+    note = ("top: honesty, bottom: precision; grey: weak or null, not scored" if main else
+            "top: honesty, bottom: precision; filled: mass at 125, hollow: mass moving; grey: not scored")
     fig.suptitle((title + "\n" if title else "") + note, fontsize=10 if title else 9)
     fig.savefig(path, dpi=130); plt.close(fig)
     return True

@@ -64,9 +64,10 @@ Every sealed dataset plants its own `mu` and background rate and keeps the mass 
 - **bias** — mean pull `(value − truth) / total`.
 - **calibration** — width of the pull distribution using YOUR quoted `total`;
   both under- and over-coverage fail.
-- **precision** — the mean `total` you quote; the leaderboard's sensitivity is
-  the reference pipeline's (the kit's template fit) over yours, its robustness
-  1 over your pull width where that is above 1.
+- **precision** — the typical miss, the root-mean-square of `value − truth`;
+  the leaderboard's precision is the reference pipeline's (the kit's template
+  fit) over yours, its honesty your pull width or its inverse, whichever is
+  below 1.
 - **recovery** — fraction of datasets that complete with a valid result.
 - **false-discovery rate** — fraction of no-signal datasets on which you claim
   discovery.
@@ -74,8 +75,8 @@ Every sealed dataset plants its own `mu` and background rate and keeps the mass 
 - **discovery power** — fraction of strong-signal datasets on which you claim
   discovery.
 
-The leaderboard's score is `100 × sensitivity × robustness` on `mu`; the
-reference pipeline with honest error bars scores 100.
+The leaderboard's score is `100 × precision × honesty` on `mu`; the reference
+pipeline scores 100 × its honesty.
 Pulls and slopes use only datasets whose injected signal has expected local
 significance ≥ 5 (a truth-based rule, the same for every submission); null
 datasets enter the false-discovery rate.  You receive these aggregates; never

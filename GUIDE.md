@@ -196,11 +196,11 @@ record:
   small *and* too large both fail), and no discovery is claimed on a dataset without a Higgs.
 - **level 3** is judged when you present: how the agent got there.
 
-The table shows no level; it is ordered by one number, the **score**: 100 × sensitivity × robustness. Sensitivity is the template fit's error bar over yours;
-robustness is 1 over your own pull width where that is above 1, so 1 when your error bars are honest. The
-template fit with honest error bars scores 100; a tighter measurement with honest pulls scores more; quoting
-less than you have gains in one factor what it loses in the other, padding costs, a bias and a wrong slope widen
-the pulls and cost. `score_suite.py` prints the numbers behind both tables on your own
+The table shows no level; it is ordered by one number, the **score**: 100 × precision × honesty. Precision is how close you land: the template fit's
+typical miss over yours, a typical miss being the root-mean-square of reported − planted μ. Honesty is whether
+your error bars match your misses: the pull width or its inverse, whichever is below 1. Shrinking or padding your
+error bars only moves honesty, and away from 1 it costs either way; a bias or a wrong slope makes you miss by
+more and costs precision. `score_suite.py` prints the numbers behind both tables on your own
 suites (`make_suite.py` plants the same mix).
 
 ## Rules
@@ -218,7 +218,7 @@ suites (`make_suite.py` plants the same mix).
 - The data are drawn from the simulation you train on. Matching data events back to pool events to read off
   their labels is cheating, not analysis; the organisers read every submission.
 - Teams of three or so. Model variance is real: run the agent twice before you trust a design.
-- The leaderboard: the score, 100 × sensitivity × robustness, sensitivity against the template fit. Level 3 is judged when
+- The leaderboard: the score, 100 × precision × honesty. Level 3 is judged when
   you present: show the prompts and the runs.
 
 ## The day

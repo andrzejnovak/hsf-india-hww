@@ -41,9 +41,9 @@ them, are computed for the record (change `level` below if the rule changes):
 The mass is optional and scored independently in the folded table: a team that reports mH on every scored
 dataset gets a mass level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when it is not reported.
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
-Order: the score, 100 x sensitivity x robustness: the sensitivity the template fit's (REFERENCE) mean error bar
-over the team's, the robustness 1 over the team's own pull width where that is above 1 (honest error bars: 1), so
-that the template fit with honest error bars is 100; then the distance |slope - 1| + |ln width| on mu. No self-check pass, no score. The levels below are still computed
+Order: the score, 100 x precision x honesty: the precision the template fit's (REFERENCE) typical miss, the RMS of
+reported - planted, over the team's; the honesty the team's pull width or its inverse, whichever is below 1. The
+template fit scores 100 x its honesty; then the distance |slope - 1| + |ln width| on mu. No self-check pass, no score. The levels below are still computed
 (leaderboard.json, the cache) but no longer shown: the GUIDE's milestones, for the presentations.
 CI runs it in three stages, one team per runner: --stage plan reads the issue, replies where needed and writes
 --plan-out, the submissions and which of them need a run (the rest are in the cache); --stage score, once per
@@ -123,18 +123,36 @@ def remember(cache: Path, e, n: int, key: str, force: bool = False):
     (cache / f"{e['team']}.json").write_text(json.dumps(keep, indent=1, default=str))
 
 
-def reference_errors(cache):
-    """The REFERENCE team's mean error bars per POI from the leaderboard's cache, for the plots' sensitivity row:
-    {"main": {poi: err}, "full": {poi: err}}, empty without a cache entry (the plots then compare with the
-    team's own mean)."""
+def reference_aggs(cache):
+    """The REFERENCE team's aggregates per POI from the leaderboard's cache, for the plots drawn on a runner:
+    {"main": {poi: aggregate}, "full": {...}}, empty without a cache entry (the plots then compare with the team's
+    own typical miss; publish draws them again against this run's reference)."""
     f = cache / f"{REFERENCE}.json" if cache is not None else None
     if f is None or not f.is_file():
         return {}
     try:
         c = json.loads(f.read_text())
-        return {which: {poi: a["err"] for poi, a in c[which]["pois"].items() if a and a.get("err")} for which in ("main", "full") if which in c}
+        return {which: {poi: a for poi, a in c[which]["pois"].items() if a} for which in ("main", "full") if which in c}
     except (json.JSONDecodeError, KeyError, TypeError):
         return {}
+
+
+def redraw(entries, results: Path):
+    """Each team scored this run (its score.json under results/, from its runner or this process) gets its plots
+    drawn again against this run's reference, so that the template fit's typical miss in them is the table's; a
+    cached team keeps the plots published before."""
+    ref = reference(entries)
+    refs = {which: {poi: a for poi, a in ref[which]["pois"].items() if a} for which in ("main", "full")} if ref else {}
+    for e in entries:
+        f = results / e["team"] / "score.json"
+        if not f.is_file():
+            continue
+        try:
+            rows = json.loads(f.read_text())["rows"]
+        except (json.JSONDecodeError, KeyError, TypeError):
+            continue
+        S.plot(rows, results / e["team"] / "recovery_mu.png", title=f"{e['team']} — sealed run", which="main", ref=refs.get("main"))
+        S.plot(rows, results / e["team"] / "recovery.png", title=f"{e['team']} — sealed run, with the mass", ref=refs.get("full"))
 
 
 def not_run(team, entry, why):
@@ -174,10 +192,10 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
     (res / "score.json").write_text(json.dumps(r, indent=1, default=str))
     log("main table, mu on the datasets whose mass stays at 125 GeV:"); S.report(r["agg_main"], log)
     log("with the mass, every dataset:"); S.report(r["agg"], log)
-    ref = reference_errors(cache if cache is not None else repo_cache(a, key, lambda s: None))
-    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run, with the mass", ref_err=ref.get("full")):
+    ref = reference_aggs(cache if cache is not None else repo_cache(a, key, lambda s: None))
+    if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run, with the mass", ref=ref.get("full")):
         log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
-    S.plot(r["rows"], res / "recovery_mu.png", title=f"{team} — sealed run", which="main", ref_err=ref.get("main"))
+    S.plot(r["rows"], res / "recovery_mu.png", title=f"{team} — sealed run", which="main", ref=ref.get("main"))
     e = {"team": team, "check_ok": check_ok, "submitted": submitted, "main": r["agg_main"], "full": r["agg"],
          "level": level(r["agg_main"], check_ok), "distance": distance(r["agg_main"]), "rows": r["rows"],
          "url": entry["url"], "commit": entry["commit"],
@@ -196,9 +214,9 @@ def build_suite(out: Path, seed, n: int, log):
         if suite.exists() or truths.exists():
             shutil.rmtree(suite, ignore_errors=True); shutil.rmtree(truths, ignore_errors=True)
     elif suite.is_dir() and man.is_file():
-        have = json.loads(man.read_text())["master_seed"]
-        if have != seed:
-            raise SystemExit(f"{suite} was built with another seed; pick another --out")
+        m = json.loads(man.read_text())
+        if m["master_seed"] != seed or m.get("recipe") != T.RECIPE:
+            raise SystemExit(f"{suite} was built with another seed or suite recipe; pick another --out")
         log(f"suite: {suite} (built earlier with this seed, {len(list(suite.glob('seed_*')))} datasets)")
         return suite, truths
     if suite.exists():
@@ -356,29 +374,29 @@ MARK = ("<!-- leaderboard -->", "<!-- /leaderboard -->")
 MASS_PAGE = None               # "LEADERBOARD_MASS.md" published a second table, mu and the mass on every dataset, when
                                # make_suite drew moving-mass datasets (fixed_mass_fraction below 1); the mass is not scored now
 REFERENCE = "baseline-mt"      # the template fit: score 100
-FORMAT = 2                     # the cache entry's layout; bump it when the aggregates gain a field the tables need
+FORMAT = 3                     # the cache entry's layout; bump it when the aggregates gain a field the tables need (3: the typical miss)
 
 
 def factors(e, ref, poi, which):
-    """(sensitivity, robustness) of a team's measurement of poi on a page's datasets: the reference's mean error
-    bar over the team's (an error bar needs a scale), and 1 over the team's pull width where that is above 1 (a
-    property of the measurement alone: 1 is honest error bars; a bias, a wrong slope or under-quoted errors widen
-    the pulls; padding is paid in sensitivity, not rewarded here). None where a number is missing."""
+    """(precision, honesty) of a team's measurement of poi on a page's datasets. Precision, how close it lands: the
+    reference's typical miss over the team's, a typical miss being the root-mean-square of reported - planted over
+    the scored datasets; a bias or a wrong slope makes it miss by more. Honesty, whether the error bars it quotes
+    match its misses: the pull width or its inverse, whichever is below 1, so error bars too small or too large by
+    the same factor cost the same; precision does not depend on them at all. None where a number is missing."""
     a, b = e[which]["pois"].get(poi), ref[which]["pois"].get(poi)
     if not a or not b:
         return None
     try:
-        sens = b["err"] / a["err"]
-        rob = 1.0 / max(1.0, a["width"])
+        prec = b["miss"] / a["miss"]
+        hon = min(a["width"], 1.0 / a["width"])
     except (KeyError, ZeroDivisionError, TypeError):
         return None
-    return (sens, rob) if math.isfinite(sens) and math.isfinite(rob) else None
+    return (prec, hon) if math.isfinite(prec) and math.isfinite(hon) else None
 
 
 def score_of(e, ref, which):
-    """The leaderboard's one number: 100 x sensitivity x robustness against the reference, for mu alone (the
-    README, which="main") or averaged over mu and the mass where reported (the mass page, "full"); None without
-    a self-check pass, a reference, or an error bar."""
+    """The leaderboard's one number: 100 x precision x honesty, for mu alone (the README, which="main") or averaged
+    over mu and the mass where reported ("full"); None without a self-check pass, a reference, or a miss."""
     if ref is None or not e.get("check_ok"):
         return None
     terms = []
@@ -422,8 +440,9 @@ def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None)
             f"μ alone on the {k} fixed-mass datasets: the [README](README.md)._",
             "", table_full(entries)] if MASS_PAGE else None
     if plots:
+        redraw(entries, results)
         main += plot_block(order(with_scores(entries, "main"), lambda e: e["distance"]), results, pdir, "recovery_mu.png", "",
-                           "reported against planted μ on the sealed datasets, each point coloured by how far it sits from the truth in units of its own error bar",
+                           "honesty on top, each dataset coloured by its pull; precision below, each miss against the template fit's typical miss",
                            lambda sc, e: f"score {fmt(sc, '{:.0f}')}")
     if plots and MASS_PAGE:
         mass += plot_block(order(with_scores(entries, "full"), lambda e: distance(e["full"])),
@@ -469,38 +488,35 @@ def fdr(a):
 
 
 def table_main(entries):
-    """The leaderboard: mu on the sealed datasets, by score, with the two factors the score is made of and the
-    raw numbers behind them."""
-    head = ["#", "team", "score", "sensitivity", "robustness", "σ μ", "pull width μ", "slope μ", "submitted"]
+    """The leaderboard: mu on the sealed datasets, by score, with its two factors and the numbers behind them."""
+    head = ["#", "team", "score", "precision", "honesty", "typical miss μ", "σ μ", "pull width μ", "submitted"]
     ref, rows = reference(entries), []
     for i, (sc, e) in enumerate(order(with_scores(entries, "main"), lambda e: e["distance"]), 1):
         mu = e["main"]["pois"].get("mu")
         f = factors(e, ref, "mu", "main") if ref and e.get("check_ok") else None
-        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(f and f[0]), fmt(f and f[1]), fmt(mu and mu.get("err"), "{:.3f}"),
-                     fmt(mu and mu["width"]), fmt(mu and mu["slope"]), e.get("submitted") or "–"])
+        rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(f and f[0]), fmt(f and f[1]), fmt(mu and mu.get("miss"), "{:.3f}"),
+                     fmt(mu and mu.get("err"), "{:.3f}"), fmt(mu and mu["width"]), e.get("submitted") or "–"])
     return md_table(head, rows)
 
 
 def table_full(entries):
     """The table with the mass (MASS_PAGE): mu and the mass on every dataset, by score."""
-    head = ["#", "team", "score", "sensitivity μ", "robustness μ", "sensitivity mass", "robustness mass",
-            "σ μ", "σ mass", "slope μ", "slope mass", "submitted"]
+    head = ["#", "team", "score", "precision μ", "honesty μ", "precision mass", "honesty mass", "typical miss μ", "typical miss mass", "submitted"]
     ref, rows = reference(entries), []
     for i, (sc, e) in enumerate(order(with_scores(entries, "full"), lambda e: distance(e["full"])), 1):
         a = e["full"]; mu, mh = a["pois"].get("mu"), a["pois"].get("mH")
         fm = factors(e, ref, "mu", "full") if ref and e.get("check_ok") else None
         fh = factors(e, ref, "mH", "full") if ref and e.get("check_ok") else None
         rows.append([str(i), e["team"], fmt(sc, "{:.0f}"), fmt(fm and fm[0]), fmt(fm and fm[1]), fmt(fh and fh[0]), fmt(fh and fh[1]),
-                     fmt(mu and mu.get("err"), "{:.3f}"), fmt(mh and mh.get("err"), "{:.1f}"),
-                     fmt(mu and mu["slope"]), fmt(mh and mh["slope"]), e.get("submitted") or "–"])
+                     fmt(mu and mu.get("miss"), "{:.3f}"), fmt(mh and mh.get("miss"), "{:.1f}"), e.get("submitted") or "–"])
     return md_table(head, rows)
 
 
 def leaderboard(entries, path_md: Path, path_json: Path, log):
     text = table_main(entries) + "\n\nWith the mass, every dataset:\n\n" + table_full(entries)
     path_md.write_text(f"# Leaderboard\n\n{text}\n\nThe first table scores μ on the datasets whose mass stays at 125 GeV, the second μ and the mass "
-                       f"on every dataset. score: 100 x sensitivity x robustness, the sensitivity {REFERENCE}'s mean error bar over the team's, "
-                       f"the robustness 1 over the team's pull width where that is above 1 (on the second table averaged with the mass where reported); the order. The mass (`mH` in RESULT.json) is optional and counts "
+                       f"on every dataset. score: 100 x precision x honesty, the precision {REFERENCE}'s typical miss (RMS of reported - planted) over the team's, "
+                       f"the honesty the pull width or its inverse, whichever is below 1 (on the second table averaged with the mass where reported); the order. The mass (`mH` in RESULT.json) is optional and counts "
                        f"when it is reported on every scored dataset. The GUIDE's levels are in leaderboard.json, not on the tables. The full numbers are in results/.\n")
     path_json.write_text(json.dumps([{k: v for k, v in e.items() if k != "rows"} for e in entries], indent=1, default=str))
     log("\n" + text)
