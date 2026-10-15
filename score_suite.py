@@ -6,8 +6,10 @@
 Runs `run.sh <dataset> <out>` once per seed (no sandbox: the real evaluation has one), reads RESULT.json, and
 compares with truth.json: a table of planted vs reported values with pulls, then the aggregates of
 EVAL_CONTRACT.md section 3 -- sensitivity (slope of reported vs planted), bias (mean pull), calibration (pull
-width), recovery, false-discovery rate and discovery power.  Pulls and slopes use the seeds whose injected
-signal has expected local significance >= 5; null seeds count towards the false-discovery rate.  --truths reads
+width), recovery, false-discovery rate and discovery power -- twice: as the leaderboard's main table does, mu
+alone on the datasets whose mass stays at 125 GeV (truth.json "mass_fixed", half of a make_suite.py suite),
+and as the table folded under it does, mu and the mass on every dataset.  Pulls and slopes use the seeds whose
+injected signal has expected local significance >= 5; null seeds count towards the false-discovery rate.  --truths reads
 each seed's truth from DIR/<seed>.json instead of <seed>/truth.json (the sealed run keeps them apart).
 """
 import argparse
@@ -65,6 +67,17 @@ def poi(res, name):
 
 
 
+MASS_FIXED_RANGE = (123.0, 127.0)   # make_suite.PRIORS["fixed_mass_range"]: a truth without the mass_fixed flag counts by its mass
+
+
+def mass_fixed(truth):
+    """Whether a dataset is one the main table scores mu on: its mass stays at 125 GeV. make_suite flags it in
+    truth.json; a truth without the flag (the public seed_000 as committed) counts when its mass lies in the window."""
+    if "mass_fixed" in truth:
+        return bool(truth["mass_fixed"])
+    return MASS_FIXED_RANGE[0] <= float(truth["mH"]) <= MASS_FIXED_RANGE[1]
+
+
 WIDTH_OK = (0.5, 1.5)   # honest pipelines sit at 0.6-1.0 on this toy (ORGANISER.md): the window catches padded and overconfident error bars, not that
 
 
@@ -120,20 +133,27 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
             log(f"{ds.name:9s} {str(status):8s} {wall:5.1f}s  " + "  ".join(f"{truth[p]:10.2f} {'-':>16s} {'-':>6s}" for p in ALL_POIS)
                 + f"  {zexp:5.1f}" + (f"\n    {errlog.strip()[-300:]}" if errlog.strip() else ""))
         rows.append(row)
-    agg = aggregate(rows)
+    agg_main, agg = aggregate(rows, mass_fixed, POIS, "the datasets whose mass stays at 125 GeV"), aggregate(rows)
+    log("\n== the main table: mu on the datasets whose mass stays at 125 GeV")
+    report(agg_main, log)
+    log("\n== folded under it, with the mass: every dataset")
     report(agg, log)
-    return {"rows": rows, "agg": agg}
+    return {"rows": rows, "agg": agg, "agg_main": agg_main}
 
 
-def aggregate(rows):
-    """The contract's aggregates from the per-seed rows: recovery, and per POI the sensitivity slope, bias and
-    calibration width over the strong seeds; the false-discovery rate on null seeds, the discovery power on strong."""
+def aggregate(rows, pick=None, pois=ALL_POIS, selection="every dataset"):
+    """The contract's aggregates from the per-seed rows: recovery (over every dataset), and per POI in pois the
+    sensitivity slope, bias and calibration width over the strong seeds, the false-discovery rate on null seeds,
+    the discovery power on strong, all over the datasets pick (a predicate on the truth) selects: the main table
+    is aggregate(rows, mass_fixed, POIS), the table with the mass aggregate(rows)."""
     ok = [r for r in rows if r["ok"]]
-    strong = [r for r in ok if r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
-    null = [r for r in ok if r["truth"]["mu"] == 0]
-    agg = {"n": len(rows), "n_ok": len(ok), "recovery": len(ok) / max(len(rows), 1),
+    picked = [r for r in ok if pick is None or pick(r["truth"])]
+    strong = [r for r in picked if r["truth"].get("expected_significance", 0) >= Z_APPLICABLE]
+    null = [r for r in picked if r["truth"]["mu"] == 0]
+    agg = {"n": len(rows), "n_ok": len(ok), "recovery": len(ok) / max(len(rows), 1), "selection": selection,
+           "n_picked": sum(1 for r in rows if pick is None or pick(r["truth"])),
            "n_strong": len(strong), "n_null": len(null), "pois": {}}
-    for name in ALL_POIS:
+    for name in pois:
         have = [r for r in strong if name in r]       # an optional POI counts on the seeds where it is reported
         if len(have) < 3 or (name in OPTIONAL_POIS and len(have) < len(strong)):
             agg["pois"][name] = None
@@ -165,9 +185,11 @@ def level_of(agg, poi="mu"):
 
 def report(agg, log=print):
     log(f"\nrecovery: {agg['n_ok']}/{agg['n']} seeds completed with a valid RESULT.json")
-    log(f"scored for {', '.join(POIS)} (and {', '.join(OPTIONAL_POIS)} if reported): {agg['n_strong']} seeds with expected significance >= {Z_APPLICABLE:g}; "
-        f"{agg['n_null']} null seeds")
-    for name in ALL_POIS:
+    log(f"scored for {', '.join(p for p in agg['pois'] if p in POIS)}"
+        + (f" (and {', '.join(p for p in agg['pois'] if p in OPTIONAL_POIS)} if reported)" if any(p in OPTIONAL_POIS for p in agg["pois"]) else "")
+        + f" on {agg.get('selection', 'every dataset')} ({agg.get('n_picked', agg['n'])} of {agg['n']}): "
+        f"{agg['n_strong']} seeds with expected significance >= {Z_APPLICABLE:g}; {agg['n_null']} null seeds")
+    for name in agg["pois"]:
         a = agg["pois"][name]
         if a is None:
             log(f"  {name}: " + ("not reported on every scorable seed (optional: no score)" if name in OPTIONAL_POIS else "fewer than 3 scorable seeds, no slope"))
@@ -176,7 +198,8 @@ def report(agg, log=print):
             f"| calibration (pull RMS) {a['width']:4.2f} -> {a['verdict']}")
     if agg["fdr"] is not None:
         log(f"  false-discovery rate: {agg['fdr']:.2f} ({agg['false_discoveries']} of {agg['n_null']} null seeds claimed)")
-    log(f"  level: {level_of(agg)} on mu" + (f", {level_of(agg, 'mH')} on the mass (optional)" if agg["pois"].get("mH") else "; the mass not reported (optional)"))
+    log(f"  level: {level_of(agg)} on mu" + (f", {level_of(agg, 'mH')} on the mass (optional)" if agg["pois"].get("mH") else
+                                            "; the mass not reported (optional)" if "mH" in agg["pois"] else ""))
     if agg["power"] is not None:
         log(f"  discovery power: {agg['power']:.2f} ({agg['discoveries']} of {agg['n_strong']} strong seeds claimed)")
 
@@ -199,13 +222,14 @@ def plot(rows, path, title=None):
                 continue
             s = r["truth"].get("expected_significance", 0) >= Z_APPLICABLE
             ax.errorbar(r["truth"][name], r[name], yerr=r[f"{name}_e"], fmt="o", ms=4, capsize=2,
-                        color="C0" if s else "0.6", alpha=0.9 if s else 0.6)
+                        color="C0" if s else "0.6", alpha=0.9 if s else 0.6,
+                        mfc=("C0" if mass_fixed(r["truth"]) else "none") if s else "0.6")
         lo, hi = ax.get_xlim()
         ax.plot([lo, hi], [lo, hi], "k--", lw=1, label="reported = planted")
         ax.set_xlim(lo, hi)
         ax.set_xlabel(f"planted {name}{unit}"); ax.set_ylabel(f"reported {name}{unit}")
         ax.legend(loc="upper left", frameon=False)
-    axes[0][0].set_title("blue: scored seeds (Z_exp ≥ 5), grey: weak or null", fontsize=9)
+    axes[0][0].set_title("blue: scored seeds (Z_exp ≥ 5), grey: weak or null\nfilled: mass at 125 (the main table), hollow: mass moving", fontsize=8)
     if title:
         fig.suptitle(title, fontsize=11)
     fig.tight_layout(); fig.savefig(path, dpi=130); plt.close(fig)

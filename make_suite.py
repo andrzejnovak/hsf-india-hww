@@ -3,8 +3,10 @@
 
     python3 make_suite.py suites/mine --n 10 --seed 7 [--pool datasets/public/seed_000/mc/pool.npz] [--design JSON]
 
-seed_000 is at the public truth (m_H = 125 GeV, mu = 1, nominal background); the others draw m_H in [100, 150],
-mu in [0, 3] with a fifth at 0, and the background normalisation within 10 % of nominal. Each dataset holds
+seed_000 is at the public truth (m_H = 125 GeV, mu = 1, nominal background); the others draw mu in [0, 3] with a
+fifth at 0 and the background normalisation within 10 % of nominal, and m_H in [100, 150], except that the first
+half of them keep it within 2 GeV of 125 (truth.json: "mass_fixed"): those, with seed_000, are the datasets the
+leaderboard's main table scores mu on; the table with the mass folded under it scores every dataset. Each dataset holds
 data/events.npz (the pseudo-data: two leptons, missing ET, jets; no labels), mc/pool.npz and mc/pool_meta.json
 (the pool, hard-linked), and truth.json. manifest.json lists the truths. --design fixes truths per sealed seed
 (a JSON list of dicts; unset keys are drawn). The sealed suite is made the same way with a seed you don't have.
@@ -19,8 +21,10 @@ import numpy as np
 
 import hww as H
 
-PRIORS = {"mH_range": [100.0, 150.0], "mu_range": [0.0, 3.0], "null_fraction": 0.2, "bkg_norm_range": [0.9, 1.1]}
-PUBLIC_TRUTH = {"mH": 125.0, "mu": 1.0, "bkg_norm": 1.0}
+PRIORS = {"mH_range": [100.0, 150.0], "mu_range": [0.0, 3.0], "null_fraction": 0.2, "bkg_norm_range": [0.9, 1.1],
+          "fixed_mass_fraction": 0.5, "fixed_mass_range": [123.0, 127.0]}   # score_suite.MASS_FIXED_RANGE is the same window
+PUBLIC_TRUTH = {"mH": 125.0, "mu": 1.0, "bkg_norm": 1.0, "mass_fixed": True}
+RECIPE = 2   # bump it when the way a suite is drawn changes: the sealed run's result cache is keyed on it
 DEFAULT_POOL = Path(__file__).resolve().parent / "datasets" / "public" / "seed_000" / "mc" / "pool.npz"
 
 
@@ -45,14 +49,17 @@ class Pool:
         return self._templates
 
 
-def draw_truth(rng, priors, fixed=None):
+def draw_truth(rng, priors, fixed=None, mass_fixed=False):
+    """One dataset's truth; mass_fixed keeps m_H within priors["fixed_mass_range"] (a main-table dataset)."""
     f = fixed or {}
-    t = {"mH": float(f.get("mH", rng.uniform(*priors["mH_range"])))}
+    mass_fixed = bool(f.get("mass_fixed", mass_fixed))
+    t = {"mH": float(f.get("mH", rng.uniform(*(priors["fixed_mass_range"] if mass_fixed else priors["mH_range"]))))}
     if "mu" in f:
         t["mu"] = float(f["mu"])
     else:
         t["mu"] = 0.0 if rng.random() < priors["null_fraction"] else float(rng.uniform(*priors["mu_range"]))
     t["bkg_norm"] = float(f.get("bkg_norm", rng.uniform(*priors["bkg_norm_range"])))
+    t["mass_fixed"] = mass_fixed
     return t
 
 
@@ -92,17 +99,18 @@ def build(out: Path, n: int = 10, seed: int = 1, pool_path=DEFAULT_POOL, design=
         raise SystemExit(f"{out} exists; pick another name")
     pool = Pool(pool_path)
     n = len(design) + 1 if design else n
+    n_fixed = round(PRIORS["fixed_mass_fraction"] * (n - 1))   # seed_001 .. seed_<n_fixed> keep the mass at 125
     truths = []
     for i in range(n):
         rng = np.random.default_rng([seed, i])
-        truth = dict(PUBLIC_TRUTH) if i == 0 else draw_truth(rng, PRIORS, design[i - 1] if design else None)
+        truth = dict(PUBLIC_TRUTH) if i == 0 else draw_truth(rng, PRIORS, design[i - 1] if design else None, mass_fixed=i <= n_fixed)
         d = out / f"seed_{i:03d}"
         full = generate(truth, rng, d, pool)
         truths.append({"seed": d.name, **full})
-        tag = "public" if i == 0 else f"Z_exp={full['expected_significance']:.1f}"
+        tag = ("public" if i == 0 else f"Z_exp={full['expected_significance']:.1f}") + ("  mass fixed" if truth["mass_fixed"] else "")
         log(f"{d.name}  mH={truth['mH']:.2f}  mu={truth['mu']:.2f}  bkg_norm={truth['bkg_norm']:.3f}  "
             f"events {full['n_signal_realized'] + full['n_background_realized']}  {tag}")
-    (out / "manifest.json").write_text(json.dumps({"task": "hww", "master_seed": seed, "pool": str(pool.path),
+    (out / "manifest.json").write_text(json.dumps({"task": "hww", "master_seed": seed, "recipe": RECIPE, "pool": str(pool.path),
                                                    "priors": PRIORS, "seeds": truths}, indent=1))
     return truths
 

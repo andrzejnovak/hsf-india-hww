@@ -54,7 +54,8 @@ are allowed and ignored.
 ## 3. How you are scored (aggregate metrics only)
 
 Across the sealed suite, for `mu` (and for `mH` where you report it on every scored dataset: a bonus,
-never a penalty):
+never a penalty).  The leaderboard's main table scores `mu` on the datasets whose planted mass stays
+within 2 GeV of 125 (half of the suite); the table folded under it scores `mu` and `mH` on every dataset:
 
 - **sensitivity** — slope of recovered vs injected value (unit slope = faithful
   measurement; a constant output scores zero).  Gate.

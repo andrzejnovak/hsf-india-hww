@@ -31,14 +31,18 @@ then score_suite.score on every sealed dataset (score.txt, score.json, recovery.
 without a sandbox: run this in a throwaway session or a VM rather than on your own account; the private
 harness's `sbh eval` on the clones is the sandboxed alternative (organiser/ORGANISER.md).
 
-Levels, as the pitch defines them (change `level` below if the rule changes):
+Two tables. The main one scores mu alone, on the datasets whose Higgs mass stays at 125 GeV (within 2 GeV;
+make_suite flags them mass_fixed: half of the drawn datasets, and seed_000), so that the mass does not pull mu
+along. Folded under it (a <details> block in the README), the table with the mass: mu and mH on every dataset,
+the mass moving between 100 and 150 GeV. Levels, as the pitch defines them (change `level` below if the rule changes):
   0  self-check failed, fewer than 90 % of the datasets gave a valid RESULT.json, or no slope
   1  a measurement: the slope of reported vs planted mu is at least 0.8
   2  level 1 with honest error bars: a pull width within [0.5, 1.5], and no false discovery
-The mass is optional and scored independently: a team that reports mH on every scored dataset gets a mass
-level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when it is not reported.
+The mass is optional and scored independently in the folded table: a team that reports mH on every scored
+dataset gets a mass level by the same rule (1: slope >= 0.8; 2: and width within [0.5, 1.5]); 0 when it is not reported.
   3  is not the machine's to judge (how the pipeline was made); say so when the teams present
-Order: the mu level, then the mass level, then the distance |slope - 1| + |ln width| on mu, smallest first.
+Order: the main table by the mu level, then the distance |slope - 1| + |ln width| on mu, smallest first; the
+folded table by its mu level, the mass level, then that distance.
 Each sbh check run takes two runs of the submission and the scoring --n runs: budget about 2 minutes per team
 with a pipeline like examples/template_fit, 15 with examples/tutorial_nn.
 
@@ -81,7 +85,7 @@ def secret_seed():
     if not s:
         return None, None
     seed = int.from_bytes(hashlib.sha256(("seed:" + s).encode()).digest()[:8], "big") & (2 ** 63 - 1)
-    return seed, hashlib.sha256(("cache:" + s).encode()).hexdigest()[:12]
+    return seed, hashlib.sha256(f"cache:{s}:recipe{T.RECIPE}".encode()).hexdigest()[:12]   # a new recipe: a new suite, no stale results
 
 
 def cached(cache: Path, team: str, entry, n: int, key: str):
@@ -95,7 +99,7 @@ def cached(cache: Path, team: str, entry, n: int, key: str):
         c = json.loads(f.read_text())
     except json.JSONDecodeError:
         return None
-    if c.get("commit") == entry["commit"] and c.get("n") == n and c.get("key") == key:
+    if c.get("commit") == entry["commit"] and c.get("n") == n and c.get("key") == key and "main" in c and "full" in c:
         return c
     return None
 
@@ -127,7 +131,8 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
         (res / "check.txt").write_text("not fetched\n")
         log("level 0 (not fetched)")
         return {"team": team, "check_ok": False, "submitted": submitted, "level": 0, "distance": float("inf"),
-                "agg": S.aggregate([]), "rows": [], "url": entry["url"], "commit": entry["commit"]}, lines
+                "main": S.aggregate([], S.mass_fixed, S.POIS), "full": S.aggregate([]), "rows": [],
+                "url": entry["url"], "commit": entry["commit"]}, lines
     if a.no_check:
         check_ok, note = False, "skipped (--no-check)"
     else:
@@ -138,11 +143,12 @@ def score_team(team, entry, a, out: Path, suite: Path, truths: Path, cache, key)
     r = S.score(sub, suite, a.timeout, truths, log=table.append, as_user=a.as_user, budget=a.team_budget)
     (res / "score.txt").write_text("\n".join(table) + "\n")
     (res / "score.json").write_text(json.dumps(r, indent=1, default=str))
-    S.report(r["agg"], log)
+    log("main table, mu on the datasets whose mass stays at 125 GeV:"); S.report(r["agg_main"], log)
+    log("with the mass, every dataset:"); S.report(r["agg"], log)
     if not S.plot(r["rows"], res / "recovery.png", title=f"{team} — sealed run"):
         log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
-    e = {"team": team, "check_ok": check_ok, "submitted": submitted, "agg": r["agg"],
-         "level": level(r["agg"], check_ok), "distance": distance(r["agg"]), "rows": r["rows"],
+    e = {"team": team, "check_ok": check_ok, "submitted": submitted, "main": r["agg_main"], "full": r["agg"],
+         "level": level(r["agg_main"], check_ok), "distance": distance(r["agg_main"]), "rows": r["rows"],
          "url": entry["url"], "commit": entry["commit"],
          "scored_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     remember(cache, e, a.n, key)
@@ -321,13 +327,15 @@ def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None)
     text = readme.read_text()
     if MARK[0] not in text or MARK[1] not in text:
         raise SystemExit(f"{readme} has no {MARK[0]} ... {MARK[1]} markers")
-    rows = [table_rows(entries)]
     when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    body = [f"_Sealed run of {when}: {entries[0]['agg']['n']} datasets nobody has seen, every submission on the "
-            f"[issue](https://github.com/{ISSUE_REPO}/issues/1) at its last comment. "
+    n, k = max(e["full"]["n"] for e in entries), max(e["main"]["n_picked"] for e in entries)
+    body = [f"_Sealed run of {when}: {n} datasets nobody has seen, every submission on the "
+            f"[issue](https://github.com/{ISSUE_REPO}/issues/1) at its last comment. The table scores μ on the {k} datasets "
+            f"whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all {n}, the mass moving between 100 and 150 GeV. "
             + ("Recovery plots: reported against planted, per team." if plots else "Recovery plots follow after the deadline.")
             + (f" A submission gets at most {budget / 60:.0f} minutes per run; the datasets left when they run out count as not run." if budget else "") + "_", "",
-            rows[0]]
+            table_main(entries), "", "<details>", "<summary><b>With the mass</b>: μ and the mass on every dataset, the mass moving</summary>", "",
+            table_full(entries), "", "</details>"]
     if plots:
         pdir = readme.parent / "results"; pdir.mkdir(exist_ok=True)
         for e in entries:
@@ -340,28 +348,48 @@ def publish(entries, readme: Path, results: Path, plots: bool, log, budget=None)
     log(f"published into {readme}" + (f" with plots under {readme.parent / 'results'}" if plots else ""))
 
 
-def table_rows(entries):
-    entries.sort(key=lambda e: (-e["level"], -mass_level(e["agg"]), e["distance"], e["team"]))
-    head = ["#", "team", "level μ", "level mass", "slope μ", "pull width μ", "slope mass", "pull width mass", "false disc.", "self-check", "submitted"]
-    rows = []
-    for i, e in enumerate(entries, 1):
-        a = e["agg"]; mu, mh = a["pois"].get("mu"), a["pois"].get("mH")
-        rows.append([str(i), e["team"], str(e["level"]), str(mass_level(a)) if mh else "0",
-                     fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fmt(mh and mh["slope"]), fmt(mh and mh["width"]),
-                     f"{a['false_discoveries']}/{a['n_null']}" if a["n_null"] else "–",
-                     "PASS" if e["check_ok"] else "FAIL", e.get("submitted") or "–"])
+def md_table(head, rows):
     w = [max(len(h), *(len(r[j]) for r in rows)) if rows else len(h) for j, h in enumerate(head)]
     line = lambda cells: "| " + " | ".join(c.ljust(w[j]) for j, c in enumerate(cells)) + " |"
-    md = [line(head), "|" + "|".join("-" * (x + 2) for x in w) + "|"] + [line(r) for r in rows]
-    return "\n".join(md)
+    return "\n".join([line(head), "|" + "|".join("-" * (x + 2) for x in w) + "|"] + [line(r) for r in rows])
+
+
+def fdr(a):
+    return f"{a['false_discoveries']}/{a['n_null']}" if a["n_null"] else "–"
+
+
+def table_main(entries):
+    """The main table: mu on the fixed-mass datasets, by level then distance."""
+    entries.sort(key=lambda e: (-e["level"], e["distance"], e["team"]))
+    head = ["#", "team", "level", "slope μ", "pull width μ", "false disc.", "self-check", "submitted"]
+    rows = []
+    for i, e in enumerate(entries, 1):
+        a = e["main"]; mu = a["pois"].get("mu")
+        rows.append([str(i), e["team"], str(e["level"]), fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fdr(a),
+                     "PASS" if e["check_ok"] else "FAIL", e.get("submitted") or "–"])
+    return md_table(head, rows)
+
+
+def table_full(entries):
+    """The folded table: mu and the mass on every dataset, by the mu level, the mass level, then distance."""
+    order = sorted(entries, key=lambda e: (-level(e["full"], e["check_ok"]), -mass_level(e["full"]), distance(e["full"]), e["team"]))
+    head = ["#", "team", "level μ", "level mass", "slope μ", "pull width μ", "slope mass", "pull width mass", "false disc.", "self-check", "submitted"]
+    rows = []
+    for i, e in enumerate(order, 1):
+        a = e["full"]; mu, mh = a["pois"].get("mu"), a["pois"].get("mH")
+        rows.append([str(i), e["team"], str(level(a, e["check_ok"])), str(mass_level(a)) if mh else "0",
+                     fmt(mu and mu["slope"]), fmt(mu and mu["width"]), fmt(mh and mh["slope"]), fmt(mh and mh["width"]),
+                     fdr(a), "PASS" if e["check_ok"] else "FAIL", e.get("submitted") or "–"])
+    return md_table(head, rows)
 
 
 def leaderboard(entries, path_md: Path, path_json: Path, log):
-    text = table_rows(entries)
-    path_md.write_text(f"# Leaderboard\n\n{text}\n\nlevel 0: no measurement (the self-check, a dataset that did not run, or a slope of μ below 0.8); "
+    text = table_main(entries) + "\n\nWith the mass, every dataset:\n\n" + table_full(entries)
+    path_md.write_text(f"# Leaderboard\n\n{text}\n\nThe first table scores μ on the datasets whose mass stays at 125 GeV, the second μ and the mass "
+                       f"on every dataset. level 0: no measurement (the self-check, a dataset that did not run, or a slope of μ below 0.8); "
                        f"1: follows the truth (slope ≥ 0.8); 2: and honest error bars (pull width in [{S.WIDTH_OK[0]}, {S.WIDTH_OK[1]}], no false discovery). "
                        f"The mass (`mH` in RESULT.json) is optional and scored on its own, by the same rule, when it is reported on every scored dataset. "
-                       f"Order: the μ level, then the mass level. Level 3 is judged in the room. The full numbers are in results/.\n")
+                       f"Order: the level, then the distance; with the mass, the μ level, the mass level, then the distance. Level 3 is judged in the room. The full numbers are in results/.\n")
     path_json.write_text(json.dumps([{k: v for k, v in e.items() if k != "rows"} for e in entries], indent=1, default=str))
     log("\n" + text)
     log(f"\nwritten: {path_md}, {path_json}; per team: {path_md.parent}/<team>/recovery.png, score.txt, check.txt")
@@ -370,7 +398,7 @@ def leaderboard(entries, path_md: Path, path_json: Path, log):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, help="the secret master seed; default: made up for this run and never printed")
-    ap.add_argument("--n", type=int, default=21, help="datasets in the sealed suite, public seed_000 included (default 21)")
+    ap.add_argument("--n", type=int, default=31, help="datasets in the sealed suite, public seed_000 included; half of the drawn ones keep the mass at 125 (default 31)")
     ap.add_argument("--issue", type=int, default=1, help=f"the submissions issue of {ISSUE_REPO} (default 1)")
     ap.add_argument("--teams", help="read the `<team>: <url> @ <commit>` lines from this file instead of the issue")
     ap.add_argument("--out", default="~/hack-sealed", help="private working directory: suite, truths, submissions, results (default ~/hack-sealed)")
