@@ -50,7 +50,7 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 06:37 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Recovery plots follow after the deadline. A submission gets at most 40 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 06:39 UTC: 31 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment. The table scores μ on the 16 datasets whose Higgs mass stays at 125 GeV; folded under it, μ and the mass on all 31, the mass moving between 100 and 150 GeV. Recovery plots follow after the deadline. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
 
 | # | team          | level | slope μ | pull width μ | false disc. | self-check | submitted                                        |
 |---|---------------|-------|---------|--------------|-------------|------------|--------------------------------------------------|
