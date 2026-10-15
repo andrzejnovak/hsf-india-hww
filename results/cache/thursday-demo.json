@@ -7,21 +7,23 @@
   "n_ok": 51,
   "recovery": 1.0,
   "selection": "the datasets whose mass stays at 125 GeV",
-  "n_picked": 26,
-  "n_strong": 19,
-  "n_null": 6,
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
   "pois": {
    "mu": {
-    "slope": 1.0349174245301496,
-    "bias": 0.5059127916397868,
-    "width": 0.9868006545871124,
-    "verdict": "OK"
+    "slope": 1.045006433036533,
+    "bias": 0.40804007595739944,
+    "width": 0.8969195253948011,
+    "verdict": "OK",
+    "err": 0.12960265223723452,
+    "err_cal": 0.12960265223723452
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 19,
-  "power": 1.0
+  "discoveries": 31,
+  "power": 0.9393939393939394
  },
  "full": {
   "n": 51,
@@ -29,32 +31,37 @@
   "recovery": 1.0,
   "selection": "every dataset",
   "n_picked": 51,
-  "n_strong": 31,
+  "n_strong": 33,
   "n_null": 14,
   "pois": {
    "mu": {
-    "slope": 1.0591926740434277,
-    "bias": 0.4133203816660305,
-    "width": 0.9468453384359458,
-    "verdict": "OK"
+    "slope": 1.045006433036533,
+    "bias": 0.40804007595739944,
+    "width": 0.8969195253948011,
+    "verdict": "OK",
+    "err": 0.12960265223723452,
+    "err_cal": 0.12960265223723452
    },
    "mH": {
-    "slope": 0.8701475370847704,
-    "bias": -0.1595960462770377,
-    "width": 1.248795884642274,
-    "verdict": "OK"
+    "slope": 0.9456262606128064,
+    "bias": -0.14962839015161067,
+    "width": 1.1161791807702526,
+    "verdict": "OK",
+    "err": 3.6875060925103362,
+    "err_cal": 4.115917529423502
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 30,
-  "power": 0.967741935483871
+  "discoveries": 31,
+  "power": 0.9393939393939394
  },
  "level": 2,
- "distance": 0.04820465551406177,
+ "distance": 0.15379556926345875,
  "url": "https://github.com/andrzejnovak/hack-thursday-demo",
  "commit": "a71c8233afcd",
- "scored_at": "2026-10-15T08:17:03Z",
+ "scored_at": "2026-10-15T08:47:04Z",
  "n": 51,
- "key": "5029bdffb576"
+ "key": "43259f915cc7",
+ "fmt": 2
 }

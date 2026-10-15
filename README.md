@@ -50,46 +50,46 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-15 08:23 UTC: 51 datasets nobody has seen, every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment; μ scored on the 26 of them whose Higgs mass stays at 125 GeV, the score 100 × the template fit's calibrated error bar over yours (see below). The same with the mass, on all 51: [LEADERBOARD_MASS.md](LEADERBOARD_MASS.md). Each team's plot on those datasets is folded at the bottom. A submission gets at most 60 minutes per run; the datasets left when they run out count as not run._
+_Sealed run of 2026-10-15 08:48 UTC: every submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1) at its last comment, on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
 
-| # | team          | score | error μ | slope μ | pull width μ | submitted                                         |
-|---|---------------|-------|---------|---------|--------------|---------------------------------------------------|
-| 1 | Hack-404      | –     | –       | 1.03    | 0.99         | 0909838 (2026-10-15T07:18:42Z by shaurya-cd)      |
-| 2 | thursday-demo | –     | –       | 1.03    | 0.99         | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
-| 3 | Horizon       | –     | –       | 1.02    | 1.13         | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
-| 4 | Pilots        | –     | –       | 1.02    | 1.13         | 3be629b (2026-10-15T06:57:34Z by ishandhull2953)  |
-| 5 | baseline-mt   | –     | –       | 1.02    | 1.13         | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
-| 6 | team_x        | –     | –       | 1.02    | 1.13         | 4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31) |
-| 7 | baseline-nn   | –     | –       | 1.02    | 1.24         | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
+| # | team          | score | sensitivity | robustness | σ μ   | pull width μ | slope μ | submitted                                         |
+|---|---------------|-------|-------------|------------|-------|--------------|---------|---------------------------------------------------|
+| 1 | Hack-404      | 112   | 1.12        | 1.00       | 0.129 | 0.88         | 1.04    | 0909838 (2026-10-15T07:18:42Z by shaurya-cd)      |
+| 2 | thursday-demo | 111   | 1.11        | 1.00       | 0.130 | 0.90         | 1.05    | a71c823 (2026-10-15T04:53:09Z by andrzejnovak)    |
+| 3 | Horizon       | 100   | 1.00        | 1.00       | 0.144 | 0.98         | 1.03    | d8bc180 (2026-10-15T04:50:58Z by AnushSingla)     |
+| 4 | Pilots        | 100   | 1.00        | 1.00       | 0.144 | 0.98         | 1.03    | 69e717a (2026-10-15T08:29:02Z by ishandhull2953)  |
+| 5 | baseline-mt   | 100   | 1.00        | 1.00       | 0.144 | 0.98         | 1.03    | 52ad132 (2026-10-14T08:25:55Z by andrzejnovak)    |
+| 6 | team_x        | 99    | 0.99        | 1.00       | 0.145 | 0.96         | 1.02    | f9c4b95 (2026-10-15T08:24:44Z by gauriaggarwal31) |
+| 7 | baseline-nn   | 87    | 0.93        | 0.94       | 0.154 | 1.07         | 1.04    | c549c28 (2026-10-14T08:26:00Z by andrzejnovak)    |
 
 <details>
-<summary><b>Recovery plots</b>, per team: reported against planted μ on the fixed-mass datasets, each point coloured by how far it sits from the truth in units of its own error bar</summary>
+<summary><b>Recovery plots</b>, per team: reported against planted μ on the sealed datasets, each point coloured by how far it sits from the truth in units of its own error bar</summary>
 
-**Hack-404** (score –)
+**Hack-404** (score 112)
 
 ![Hack-404](results/Hack-404.png)
 
-**thursday-demo** (score –)
+**thursday-demo** (score 111)
 
 ![thursday-demo](results/thursday-demo.png)
 
-**Horizon** (score –)
+**Horizon** (score 100)
 
 ![Horizon](results/Horizon.png)
 
-**Pilots** (score –)
+**Pilots** (score 100)
 
 ![Pilots](results/Pilots.png)
 
-**baseline-mt** (score –)
+**baseline-mt** (score 100)
 
 ![baseline-mt](results/baseline-mt.png)
 
-**team_x** (score –)
+**team_x** (score 99)
 
 ![team_x](results/team_x.png)
 
-**baseline-nn** (score –)
+**baseline-nn** (score 87)
 
 ![baseline-nn](results/baseline-nn.png)
 

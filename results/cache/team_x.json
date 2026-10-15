@@ -1,27 +1,29 @@
 {
  "team": "team_x",
  "check_ok": true,
- "submitted": "4bc4ba0 (2026-10-15T07:12:25Z by gauriaggarwal31)",
+ "submitted": "f9c4b95 (2026-10-15T08:24:44Z by gauriaggarwal31)",
  "main": {
   "n": 51,
   "n_ok": 51,
   "recovery": 1.0,
   "selection": "the datasets whose mass stays at 125 GeV",
-  "n_picked": 26,
-  "n_strong": 19,
-  "n_null": 6,
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
   "pois": {
    "mu": {
-    "slope": 1.0210030948351272,
-    "bias": 0.37110412217785727,
-    "width": 1.1301813244413639,
-    "verdict": "OK"
+    "slope": 1.023900333218215,
+    "bias": 0.38707923954158235,
+    "width": 0.9614991614131185,
+    "verdict": "OK",
+    "err": 0.14486452134685998,
+    "err_cal": 0.14486452134685998
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 19,
-  "power": 1.0
+  "discoveries": 31,
+  "power": 0.9393939393939394
  },
  "full": {
   "n": 51,
@@ -29,32 +31,37 @@
   "recovery": 1.0,
   "selection": "every dataset",
   "n_picked": 51,
-  "n_strong": 31,
+  "n_strong": 33,
   "n_null": 14,
   "pois": {
    "mu": {
-    "slope": 1.0450483510665518,
-    "bias": 0.36465660107451053,
-    "width": 1.039495112170885,
-    "verdict": "OK"
+    "slope": 1.023900333218215,
+    "bias": 0.38707923954158235,
+    "width": 0.9614991614131185,
+    "verdict": "OK",
+    "err": 0.14486452134685998,
+    "err_cal": 0.14486452134685998
    },
    "mH": {
-    "slope": 0.9008288780739853,
-    "bias": -0.18807443125644555,
-    "width": 1.344813693414598,
-    "verdict": "OK"
+    "slope": 1.0692659001202118,
+    "bias": 0.013692327570590536,
+    "width": 1.2883931658978824,
+    "verdict": "OK",
+    "err": 3.184391324865744,
+    "err_cal": 4.102748020501528
    }
   },
   "false_discoveries": 0,
   "fdr": 0.0,
-  "discoveries": 30,
-  "power": 0.967741935483871
+  "discoveries": 31,
+  "power": 0.9393939393939394
  },
  "level": 2,
- "distance": 0.14338117879379025,
- "url": "https://github.com/gauriaggarwal31/hsf-india-hww-team_x",
- "commit": "4bc4ba063d44",
- "scored_at": "2026-10-15T08:15:45Z",
+ "distance": 0.06316191933714135,
+ "url": "https://github.com/gauriaggarwal31/hsf-india-hww-team_x.git",
+ "commit": "f9c4b95b4d44",
+ "scored_at": "2026-10-15T08:46:34Z",
  "n": 51,
- "key": "5029bdffb576"
+ "key": "43259f915cc7",
+ "fmt": 2
 }
