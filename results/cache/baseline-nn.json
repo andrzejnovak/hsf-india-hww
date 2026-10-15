@@ -1,0 +1,37 @@
+{
+ "team": "baseline-nn",
+ "check_ok": true,
+ "submitted": "c549c28 (2026-10-14T08:26:00Z by andrzejnovak)",
+ "agg": {
+  "n": 21,
+  "n_ok": 21,
+  "recovery": 1.0,
+  "n_strong": 14,
+  "n_null": 4,
+  "pois": {
+   "mu": {
+    "slope": 1.0209357923532913,
+    "bias": 0.40341016372321886,
+    "width": 1.3713262191574798,
+    "verdict": "OK"
+   },
+   "mH": {
+    "slope": 1.005674932322357,
+    "bias": 0.17936308283551944,
+    "width": 1.4646608014411204,
+    "verdict": "OK"
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 14,
+  "power": 1.0
+ },
+ "level": 2,
+ "distance": 0.3367141071223348,
+ "url": "https://github.com/andrzejnovak/hsf-india-hww",
+ "commit": "c549c28882b3",
+ "scored_at": "2026-10-15T05:55:02Z",
+ "n": 21,
+ "key": "a1a168b52b85"
+}

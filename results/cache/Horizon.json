@@ -1,0 +1,37 @@
+{
+ "team": "Horizon",
+ "check_ok": true,
+ "submitted": "d8bc180 (2026-10-15T04:50:58Z by AnushSingla)",
+ "agg": {
+  "n": 21,
+  "n_ok": 21,
+  "recovery": 1.0,
+  "n_strong": 14,
+  "n_null": 4,
+  "pois": {
+   "mu": {
+    "slope": 1.0308759760954513,
+    "bias": 0.45966569001897106,
+    "width": 1.340941880228557,
+    "verdict": "OK"
+   },
+   "mH": {
+    "slope": 0.9722910951289045,
+    "bias": 0.17604273815258975,
+    "width": 1.5710658645789202,
+    "verdict": "UNDER-covering: error bars too small"
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 13,
+  "power": 0.9285714285714286
+ },
+ "level": 2,
+ "distance": 0.32424823883574394,
+ "url": "https://github.com/AnushSingla/horizon-hsf-workshop",
+ "commit": "d8bc180963de",
+ "scored_at": "2026-10-15T05:55:22Z",
+ "n": 21,
+ "key": "a1a168b52b85"
+}
