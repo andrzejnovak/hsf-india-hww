@@ -1,0 +1,82 @@
+# A private sealed run, for the organisers: started by hand only ("Run workflow"), never by the issue. It scores the
+# submissions given as input on the same sealed suite as the leaderboard (the SEALED_SEED secret), beside the
+# template fit, the reference of precision, and publishes nothing: no README, no issue reply, no cache commit, no
+# artifact. Submissions scored before on this suite (every leaderboard row) are read from a copy of results/cache
+# and cost nothing; whatever this run scores goes into that copy and is thrown away with the runner.
+# The repository is public, and so are this run's log and summary: they carry the aggregate table (score,
+# precision, honesty and the numbers behind them) and each submission's URL and commit, never a per-dataset row
+# or a truth, which stay in files on the runner. A candidate in a private repository: its owner/name in `repo` and
+# a read-only token for it in the CANDIDATE_TOKEN secret; it is checked out beside the kit without the token in its
+# git config, and a line `<name>: private @ <commit>` scores it from there.
+name: private run
+
+on:
+  workflow_dispatch:
+    inputs:
+      subs:
+        description: "submissions, `<name>: <git url> @ <commit>`, separated by `;` (`<name>: private @ <commit>` for `repo`)"
+        required: true
+      repo:
+        description: "a private repository holding a candidate, owner/name (needs the CANDIDATE_TOKEN secret); empty: none"
+        default: ""
+      n:
+        description: "datasets in the sealed suite: the leaderboard's 51, or the cache does not apply"
+        default: "51"
+
+concurrency:
+  group: private-run
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180   # up to the 60-minute budget per submission, two at a time, and the self-checks
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: inputs.repo != ''
+        with:
+          repository: ${{ inputs.repo }}
+          token: ${{ secrets.CANDIDATE_TOKEN }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --quiet numpy scipy matplotlib
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu   # the CPU build, alone on its index: what a submission may import
+      - name: the submissions, the template fit beside them
+        env:
+          SUBS: ${{ inputs.subs }}
+        run: |
+          python - <<'PY'
+          import os, re
+          ref = "baseline-mt: https://github.com/andrzejnovak/hsf-india-hww @ 52ad132c99de"   # the reference of precision, as on the leaderboard
+          lines = [l.strip() for l in re.split(r"\n|\\n|;", os.environ["SUBS"]) if l.strip()]   # the form is one line: `;` separates
+          cand = os.path.join(os.environ["GITHUB_WORKSPACE"], "candidate")
+          lines = [re.sub(r":\s*private\s*@", f": {cand} @", l) for l in lines]
+          if not any(l.startswith("baseline-mt:") for l in lines):
+              lines.insert(0, ref)
+          open("/tmp/teams.txt", "w").write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY
+          cp -r results/cache /tmp/private-cache
+      - name: score them on the sealed suite
+        env:
+          SEALED_SEED: ${{ secrets.SEALED_SEED }}   # the leaderboard's suite; dropped by sealed_run.py before any submission runs
+        run: |
+          python organiser/sealed_run.py --teams /tmp/teams.txt --out /tmp/sealed --cache /tmp/private-cache --as nobody \
+            --team-budget 3600 --n "${{ inputs.n }}" --jobs 2
+      - name: the table
+        if: always()
+        run: |
+          { echo "### Private run on the sealed suite (published nowhere)"; echo; cat /tmp/sealed/results/leaderboard.md 2>/dev/null || echo "no table: see the log"; } >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sealed/results/leaderboard.md 2>/dev/null || true
