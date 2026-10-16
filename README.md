@@ -50,17 +50,17 @@ Personal access tokens); from your laptop it is your usual push.
 ## Leaderboard
 
 <!-- leaderboard -->
-_Sealed run of 2026-10-16 05:22 UTC: each team's latest submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1), on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
+_Sealed run of 2026-10-16 05:23 UTC: each team's latest submission on the [issue](https://github.com/andrzejnovak/hsf-india-hww/issues/1), on 51 sealed datasets, the Higgs mass at 125 GeV in all of them and μ and the background rate planted anew in each._
 
 | # | team                                                              | score | precision | honesty | typical miss μ | σ μ   | pull width μ | submitted                                                                                                           |
 |---|-------------------------------------------------------------------|-------|-----------|---------|----------------|-------|--------------|---------------------------------------------------------------------------------------------------------------------|
 | 1 | [Horizon](https://github.com/AnushSingla/horizon-hsf-workshop)    | 126   | 1.27      | 0.99    | 0.118          | 0.112 | 0.99         | [2c53e22](https://github.com/AnushSingla/horizon-hsf-workshop/tree/2c53e2212d17) 2026-10-16 04:12 by AnushSingla    |
 | 2 | [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 119   | 1.28      | 0.93    | 0.117          | 0.121 | 0.93         | [350c714](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/350c714) 2026-10-15 11:12 by gauriaggarwal31 |
-| 3 | [pilots](https://github.com/ishandhull2953/hww-hackathon)         | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [9440437](https://github.com/ishandhull2953/hww-hackathon/tree/9440437ba495) 2026-10-16 05:17 by ishandhull2953     |
-| 4 | [Pilot](https://github.com/ishandhull2953/hww-hackathon)          | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69) 2026-10-15 09:37 by ishandhull2953          |
-| 5 | [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69996a9) 2026-10-15 10:31 by ishandhull2953     |
-| 6 | [baseline-mt](https://github.com/andrzejnovak/hsf-india-hww)      | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | [52ad132](https://github.com/andrzejnovak/hsf-india-hww/tree/52ad132c99de) 2026-10-14 08:25 by andrzejnovak         |
-| 7 | [Hack-404](https://github.com/shaurya-cd/Hack-404)                | 90    | 0.91      | 0.99    | 0.165          | 0.160 | 0.99         | [20117d7](https://github.com/shaurya-cd/Hack-404/tree/20117d7) 2026-10-16 04:57 by shaurya-cd                       |
+| 3 | [Hack-404](https://github.com/shaurya-cd/Hack-404)                | 109   | 1.24      | 0.88    | 0.121          | 0.129 | 0.88         | [0909838](https://github.com/shaurya-cd/Hack-404/tree/0909838) 2026-10-16 05:22 by shaurya-cd                       |
+| 4 | [pilots](https://github.com/ishandhull2953/hww-hackathon)         | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [9440437](https://github.com/ishandhull2953/hww-hackathon/tree/9440437ba495) 2026-10-16 05:17 by ishandhull2953     |
+| 5 | [Pilot](https://github.com/ishandhull2953/hww-hackathon)          | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69) 2026-10-15 09:37 by ishandhull2953          |
+| 6 | [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 108   | 1.22      | 0.88    | 0.123          | 0.103 | 1.13         | [dff9a69](https://github.com/ishandhull2953/hww-hackathon/tree/dff9a69996a9) 2026-10-15 10:31 by ishandhull2953     |
+| 7 | [baseline-mt](https://github.com/andrzejnovak/hsf-india-hww)      | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | [52ad132](https://github.com/andrzejnovak/hsf-india-hww/tree/52ad132c99de) 2026-10-14 08:25 by andrzejnovak         |
 | 8 | [baseline-nn](https://github.com/andrzejnovak/hsf-india-hww)      | 78    | 0.84      | 0.94    | 0.179          | 0.154 | 1.07         | [c549c28](https://github.com/andrzejnovak/hsf-india-hww/tree/c549c28882b3) 2026-10-14 08:26 by andrzejnovak         |
 
 <details>
@@ -71,8 +71,8 @@ _Sealed run of 2026-10-16 05:22 UTC: each team's latest submission on the [issue
 | [Horizon](https://github.com/AnushSingla/horizon-hsf-workshop)    | 111   | 1.26      | 0.88    | 0.119          | 0.125 | 0.88         | [458fcb0](https://github.com/AnushSingla/horizon-hsf-workshop/tree/458fcb0ae83d) 2026-10-15 09:05 by AnushSingla    |
 | [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 105   | 1.14      | 0.92    | 0.131          | 0.135 | 0.92         | [46fac17](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/46fac17) 2026-10-15 10:53 by gauriaggarwal31 |
 | [team_x](https://github.com/gauriaggarwal31/hsf-india-hww-team_x) | 103   | 1.04      | 0.99    | 0.144          | 0.138 | 1.01         | [d1f83a7](https://github.com/gauriaggarwal31/hsf-india-hww-team_x/tree/d1f83a7) 2026-10-15 09:07 by gauriaggarwal31 |
+| [Hack-404](https://github.com/shaurya-cd/Hack-404)                | 90    | 0.91      | 0.99    | 0.165          | 0.160 | 0.99         | [20117d7](https://github.com/shaurya-cd/Hack-404/tree/20117d7) 2026-10-16 04:57 by shaurya-cd                       |
 | [Pilots](https://github.com/ishandhull2953/hww-hackathon)         | 98    | 1.00      | 0.98    | 0.150          | 0.144 | 0.98         | [69e717a](https://github.com/ishandhull2953/hww-hackathon/tree/69e717a) 2026-10-15 08:29 by ishandhull2953          |
-| [Hack-404](https://github.com/shaurya-cd/Hack-404)                | 109   | 1.24      | 0.88    | 0.121          | 0.129 | 0.88         | [0909838](https://github.com/shaurya-cd/Hack-404/tree/0909838) 2026-10-15 07:18 by shaurya-cd                       |
 
 </details>
 
@@ -86,6 +86,10 @@ _Sealed run of 2026-10-16 05:22 UTC: each team's latest submission on the [issue
 **team_x** (score 119)
 
 ![team_x](results/team_x.png)
+
+**Hack-404** (score 109)
+
+![Hack-404](results/Hack-404.png)
 
 **pilots** (score 108)
 
@@ -102,10 +106,6 @@ _Sealed run of 2026-10-16 05:22 UTC: each team's latest submission on the [issue
 **baseline-mt** (score 98)
 
 ![baseline-mt](results/baseline-mt.png)
-
-**Hack-404** (score 90)
-
-![Hack-404](results/Hack-404.png)
 
 **baseline-nn** (score 78)
 
