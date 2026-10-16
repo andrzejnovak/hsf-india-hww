@@ -1,0 +1,70 @@
+{
+ "team": "Hack-404",
+ "check_ok": true,
+ "note": null,
+ "main": {
+  "n": 51,
+  "n_ok": 51,
+  "recovery": 1.0,
+  "selection": "the datasets whose mass stays at 125 GeV",
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
+  "pois": {
+   "mu": {
+    "slope": 1.072441453816495,
+    "bias": 0.3645741091851683,
+    "width": 0.9897828300782802,
+    "verdict": "OK",
+    "miss": 0.16480609799884788,
+    "err": 0.16002128051478107,
+    "err_cal": 0.16002128051478107
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 29,
+  "power": 0.8787878787878788
+ },
+ "full": {
+  "n": 51,
+  "n_ok": 51,
+  "recovery": 1.0,
+  "selection": "every dataset",
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
+  "pois": {
+   "mu": {
+    "slope": 1.072441453816495,
+    "bias": 0.3645741091851683,
+    "width": 0.9897828300782802,
+    "verdict": "OK",
+    "miss": 0.16480609799884788,
+    "err": 0.16002128051478107,
+    "err_cal": 0.16002128051478107
+   },
+   "mH": {
+    "slope": 1.114015505462086,
+    "bias": -0.031001637148067425,
+    "width": 1.4838463301596296,
+    "verdict": "OK",
+    "miss": 5.20599909459552,
+    "err": 4.148768510833501,
+    "err_cal": 6.156134929482122
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 29,
+  "power": 0.8787878787878788
+ },
+ "level": 2,
+ "distance": 0.08271117729099356,
+ "url": "https://github.com/shaurya-cd/Hack-404.git",
+ "commit": "20117d7",
+ "scored_at": "2026-10-16T05:11:34Z",
+ "n": 51,
+ "key": "43259f915cc7",
+ "fmt": 3
+}
