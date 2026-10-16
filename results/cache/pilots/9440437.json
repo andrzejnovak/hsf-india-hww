@@ -1,0 +1,70 @@
+{
+ "team": "pilots",
+ "check_ok": true,
+ "note": null,
+ "main": {
+  "n": 51,
+  "n_ok": 51,
+  "recovery": 1.0,
+  "selection": "the datasets whose mass stays at 125 GeV",
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
+  "pois": {
+   "mu": {
+    "slope": 1.0286457081837068,
+    "bias": 0.563418974984028,
+    "width": 1.1319760377313923,
+    "verdict": "OK",
+    "miss": 0.12295695264470201,
+    "err": 0.10342855113473917,
+    "err_cal": 0.11707864150180075
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 32,
+  "power": 0.9696969696969697
+ },
+ "full": {
+  "n": 51,
+  "n_ok": 51,
+  "recovery": 1.0,
+  "selection": "every dataset",
+  "n_picked": 51,
+  "n_strong": 33,
+  "n_null": 14,
+  "pois": {
+   "mu": {
+    "slope": 1.0286457081837068,
+    "bias": 0.563418974984028,
+    "width": 1.1319760377313923,
+    "verdict": "OK",
+    "miss": 0.12295695264470201,
+    "err": 0.10342855113473917,
+    "err_cal": 0.11707864150180075
+   },
+   "mH": {
+    "slope": 0.9458646512745335,
+    "bias": 0.04628037422921653,
+    "width": 1.5204001562316996,
+    "verdict": "UNDER-covering: error bars too small",
+    "miss": 4.927205821126502,
+    "err": 2.88116028499414,
+    "err_cal": 4.3805165474336585
+   }
+  },
+  "false_discoveries": 0,
+  "fdr": 0.0,
+  "discoveries": 32,
+  "power": 0.9696969696969697
+ },
+ "level": 2,
+ "distance": 0.1526105196588421,
+ "url": "https://github.com/ishandhull2953/hww-hackathon.git",
+ "commit": "9440437ba495",
+ "scored_at": "2026-10-16T05:22:06Z",
+ "n": 51,
+ "key": "43259f915cc7",
+ "fmt": 3
+}
